@@ -40,7 +40,6 @@ jobs:
           password: ${{ secrets.DROPLET_PASSWORD }}
           script: |
             cd ~
-            pip3 install --force-reinstall 'requests<2.29.0' 'urllib3<2.0'
             export AUTH_SERVICE_IP=${{ vars.DROPLET_IP }}
             docker-compose down
             docker-compose pull
