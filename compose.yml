@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   app-service:
     # TODO: change "letsgetrusty" to your Docker Hub username
