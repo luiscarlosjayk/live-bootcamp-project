@@ -48,17 +48,17 @@ jobs:
         profile: minimal
         toolchain: stable
 
-    # - name: Build and test app-service code
-    #   working-directory: ./app-service
-    #   run: |
-    #     cargo build --verbose
-    #     cargo test --verbose
+    - name: Build and test app-service code
+      working-directory: ./app-service
+      run: |
+        cargo build --verbose
+        cargo test --verbose
 
-    # - name: Build and test auth-service code
-    #   working-directory: ./auth-service
-    #   run: |
-    #     cargo build --verbose
-    #     cargo test --verbose
+    - name: Build and test auth-service code
+      working-directory: ./auth-service
+      run: |
+        cargo build --verbose
+        cargo test --verbose
 
     #   # Set up Docker Buildx for multi-platform builds
     # - name: Set up Docker Buildx
