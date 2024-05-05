@@ -2,24 +2,24 @@ name: Test & Build
 
 # Trigger the workflow when changes are pushed to the main branch
 on:
-    push:
-        branches:
-            - main
-            - features/*
+  push:
+    branches:
+      - main
+      - features/*
 
-    workflow_dispatch:
-        inputs:
-            deploy:
-                description: 'Triggers the deploy workflow'
-                type: boolean
-                required: true
-                default: false
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Triggers the deploy workflow'
+        type: boolean
+        required: true
+        default: false
 
 jobs:
   deploy:
     name: Deploy
     uses: ./.github/workflows/deploy.yml
-
+    needs: build
 
   build:
     runs-on: ubuntu-latest
