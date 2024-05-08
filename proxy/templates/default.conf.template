@@ -1,5 +1,10 @@
 server {
     listen ${NGINX_PORT};
+    listen [::]:${NGINX_PORT};
+
+    root /var/www/html;
+    index index.html index.htm index.nginx-debian.html;
+    server_name ${AUTH_SERVICE_IP};
 
     location /auth/ {
       proxy_pass http://auth-service:3000/;
@@ -17,5 +22,10 @@ server {
     # Serve static files for auth-service
     location /auth/assets/ {
       proxy_pass http://auth-service:3000/assets/;
+    }
+
+    location ~ /.well-known/acme-challenge {
+      allow all;
+      root /var/www/html;
     }
 }
