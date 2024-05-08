@@ -1,31 +1,51 @@
 server {
-    listen ${NGINX_PORT};
-    listen [::]:${NGINX_PORT};
+  listen ${NGINX_PORT};
+  listen [::]:${NGINX_PORT};
 
+  root /var/www/html;
+  index index.html index.htm index.nginx-debian.html;
+  server_name ${AUTH_SERVICE_IP};
+
+  location /auth/ {
+    proxy_pass http://auth-service:3000/;
+  }
+
+  location /app/ {
+    proxy_pass http://app-service:8000/;
+  }
+
+  # Serve static files for app-service
+  location /app/assets/ {
+    proxy_pass http://app-service:8000/assets/;
+  }
+
+  # Serve static files for auth-service
+  location /auth/assets/ {
+    proxy_pass http://auth-service:3000/assets/;
+  }
+
+  location ~ /.well-known/acme-challenge {
+    allow all;
     root /var/www/html;
-    index index.html index.htm index.nginx-debian.html;
-    server_name ${AUTH_SERVICE_IP};
+  }
 
-    location /auth/ {
-      proxy_pass http://auth-service:3000/;
+  server {
+    listen              ${NGINX_HTTPS_PORT} ssl;
+    server_name         remote-portal;
+    ssl_certificate     ./ssl_cert.pem;
+    ssl_certificate_key ./ssl_cert.key;
+    location / {
+      proxy_pass http://auth-service:3000;
     }
+  }
 
-    location /app/ {
-      proxy_pass http://app-service:8000/;
+  server {
+    listen              443 ssl;
+    server_name         remote-portal;
+    ssl_certificate     ./ssl_cert.pem;
+    ssl_certificate_key ./ssl_cert.key;
+    location / {
+      proxy_pass http://app-service:3000;
     }
-
-    # Serve static files for app-service
-    location /app/assets/ {
-      proxy_pass http://app-service:8000/assets/;
-    }
-
-    # Serve static files for auth-service
-    location /auth/assets/ {
-      proxy_pass http://auth-service:3000/assets/;
-    }
-
-    location ~ /.well-known/acme-challenge {
-      allow all;
-      root /var/www/html;
-    }
+  }
 }
