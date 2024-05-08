@@ -34,8 +34,10 @@ services:
       - NGINX_HOST=localhost
       - NGINX_PORT=80
     depends_on:
-      - auth-service
-      - app-service
+      auth-service:
+        condition: service_started
+      app-service:
+        condition: service_started
     networks:
       - auth-tier
       - app-tier

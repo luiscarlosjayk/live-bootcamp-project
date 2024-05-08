@@ -1,21 +1,21 @@
 server {
     listen ${NGINX_PORT};
 
-    location /auth-service/ {
+    location /auth/ {
       proxy_pass http://auth-service:3000/;
     }
 
-    location /app-service/ {
+    location /app/ {
       proxy_pass http://app-service:8000/;
     }
 
     # Serve static files for app-service
-    location /app-service/assets/ {
+    location /app/assets/ {
       proxy_pass http://app-service:8000/assets/;
     }
 
     # Serve static files for auth-service
-    location /auth-service/assets/ {
+    location /auth/assets/ {
       proxy_pass http://auth-service:3000/assets/;
     }
 }
