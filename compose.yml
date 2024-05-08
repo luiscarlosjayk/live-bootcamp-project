@@ -1,5 +1,6 @@
 services:
   app-service:
+    container_name: app_service
     image: luiscarlosjayk/app-service # specify name of image on Docker Hub
     restart: "always" # automatically restart container when server crashes
     environment: # set up environment variables
@@ -9,8 +10,39 @@ services:
     depends_on: # only run app-service after auth-service has started
       auth-service:
         condition: service_started
+    networks:
+      - app-tier
+
   auth-service:
+    container_name: auth_service
     image: luiscarlosjayk/auth-service
     restart: "always" # automatically restart container when server crashes
     ports:
       - "3000:3000" # expose port 3000 so that applications outside the container can connect to it 
+    networks:
+      - auth-tier
+  
+  reverse-proxy:
+    container_name: nginx
+    image: nginx:latest
+    restart: "always" # automatically restart container when server crashes
+    volumes:
+      - ./proxy/templates:/etc/nginx/templates
+    ports:
+      - 8080:80
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+    depends_on:
+      - auth-service
+      - app-service
+    networks:
+      - auth-tier
+      - app-tier
+
+networks:
+  auth-tier:
+    driver: bridge
+  app-tier:
+    driver: bridge
+    
