@@ -35,7 +35,7 @@ jobs:
       - name: Copy proxy/templates to droplet
         run: sshpass -v -p ${{ secrets.DROPLET_PASSWORD }} scp -r -o StrictHostKeyChecking=no proxy/templates root@${{ vars.DROPLET_IP }}:~
 
-      - name: Deploy
+      - name: Deploy and run Docker
         uses: appleboy/ssh-action@master
         with:
           host: ${{ vars.DROPLET_IP }}
