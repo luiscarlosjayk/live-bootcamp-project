@@ -15,8 +15,9 @@ server {
 
 server {
   listen ${NGINX_HTTPS_PORT};
-  listen [::]:${NGINX_HTTPS_PORT} ssl http2;
+  listen [::]:${NGINX_HTTPS_PORT} ssl;
   server_name ${DOMAIN} www.${DOMAIN};
+  http2 on;
 
   server_tokens off;
 
