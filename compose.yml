@@ -58,7 +58,7 @@ services:
       - certbot-var:/var/lib/letsencrypt
     depends_on:
       - reverse-proxy
-    command: certonly --webroot --webroot-path=/var/www/html --email luiscarlosjayk@gmail.com --agree-tos --no-ff-email --staging -d livebootcamp.luiscarlosjayk.com -d www.livebootcamp.luiscarlosjayk.com
+    command: certonly --webroot --webroot-path=/var/www/html --email luiscarlosjayk@gmail.com --agree-tos --no-eff-email --staging -d livebootcamp.luiscarlosjayk.com -d www.livebootcamp.luiscarlosjayk.com
 
 volumes:
   certbot-etc:
