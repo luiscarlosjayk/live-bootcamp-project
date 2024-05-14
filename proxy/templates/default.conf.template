@@ -41,7 +41,7 @@ server {
   root /var/www/html;
   index index.html index.htm index.nginx-debian.html;
 
-  location /auth {
+  location /auth/ {
     proxy_pass http://auth-service:${AUTH_SERVICE_PORT}/;
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-XSS-Protection "1; mode=block" always;
@@ -50,7 +50,7 @@ server {
     add_header Content-Security-Policy "default-src * data: 'unsafe-eval' 'unsafe-inline'" always;
   }
 
-  location /app {
+  location /app/ {
     proxy_pass http://app-service:${APP_SERVICE_PORT}/;
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-XSS-Protection "1; mode=block" always;

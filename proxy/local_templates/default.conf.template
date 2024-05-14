@@ -6,11 +6,11 @@ server {
   root /var/www/html;
   index index.html index.htm index.nginx-debian.html;
 
-  location /auth {
+  location /auth/ {
     proxy_pass http://auth-service:${AUTH_SERVICE_PORT}/;
   }
 
-  location /app {
+  location /app/ {
     proxy_pass http://app-service:${APP_SERVICE_PORT}/;
   }
 
