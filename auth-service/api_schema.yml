@@ -1,13 +1,15 @@
 # Visualize schema at: https://editor.swagger.io/
-openapi: 3.0.0
+openapi: 3.0.3
 info:
   title: Authentication Service API
   description: This is an API for an authentication service using JWT and optional email 2FA.
   version: 1.0.0
 
 servers:
-  - url: 'http://example.com/api'
-    description: Main server
+  - url: https://livebootcamp.luiscarlosjayk.com/auth
+    description: Remote server
+  - url: 'http://localhost/auth'
+    description: Localhost
 
 paths:
   /:
