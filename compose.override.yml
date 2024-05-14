@@ -8,3 +8,13 @@ services:
   auth-service:
     build:
       context: ./auth-service # specify directory where local Dockerfile is located
+
+  reverse-proxy:
+    restart: "unless-stopped" # automatically restart container when server crashes
+    ports:
+      - 80:80
+    volumes:
+      - ./proxy/local_templates:/etc/nginx/templates
+  
+  certbot: # Do not run certbot container in local
+    entrypoint: ["echo", "certbot disabled"]
