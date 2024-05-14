@@ -1,9 +1,9 @@
-use core::fmt;
 use std::error::Error;
 
-use axum::{response::IntoResponse, routing::post, serve::Serve, Router};
-use reqwest::StatusCode;
+use axum::{routing::post, serve::Serve, Router};
 use tower_http::services::ServeDir;
+
+pub mod routes;
 
 // This struct encapsulates our application-related logic.
 pub struct Application {
@@ -13,50 +13,21 @@ pub struct Application {
     pub address: String,
 }
 
-pub enum Paths {
-    Root,
-    Signup,
-    Login,
-    Verify2FA,
-    VerifyToken,
-}
-
-impl Paths {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Root => "/",
-            Self::Signup => "/signup",
-            Self::Login => "/login",
-            Self::Verify2FA => "/verify-2fa",
-            Self::VerifyToken => "/verify-token",
-        }
-    }
-}
-
-impl fmt::Display for Paths {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let output = match self {
-            Self::Root => "/",
-            Self::Signup => "/signup",
-            Self::Login => "/login",
-            Self::Verify2FA => "/verify-2fa",
-            Self::VerifyToken => "/verify-token",
-        };
-        write!(f, "{}", output)
-    }
-}
-
 impl Application {
     pub async fn build(address: &str) -> Result<Self, Box<dyn Error>> {
         // Move the Router definition from `main.rs` to here.
         // Also, remove the `hello` route.
         // We don't need it at this point!
         let router = Router::new()
-            .route(Paths::Signup.as_str(), post(signup))
-            .route(Paths::Login.as_str(), post(login))
-            .route(Paths::Verify2FA.as_str(), post(verify_2fa))
-            .route(Paths::VerifyToken.as_str(), post(verify_token))
-            .nest_service(Paths::Root.as_str(), ServeDir::new("assets"));
+            .route(routes::Paths::Signup.as_str(), post(routes::signup))
+            .route(routes::Paths::Login.as_str(), post(routes::login))
+            .route(routes::Paths::Logout.as_str(), post(routes::logout))
+            .route(routes::Paths::Verify2FA.as_str(), post(routes::verify_2fa))
+            .route(
+                routes::Paths::VerifyToken.as_str(),
+                post(routes::verify_token),
+            )
+            .nest_service(routes::Paths::Root.as_str(), ServeDir::new("assets"));
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
@@ -70,22 +41,4 @@ impl Application {
         println!("listening on {}", &self.address);
         self.server.await
     }
-}
-
-// Example route handler.
-// For now we will simply return a 200 (OK) status code.
-async fn signup() -> impl IntoResponse {
-    StatusCode::OK.into_response()
-}
-
-async fn login() -> impl IntoResponse {
-    StatusCode::OK.into_response()
-}
-
-async fn verify_2fa() -> impl IntoResponse {
-    StatusCode::OK.into_response()
-}
-
-async fn verify_token() -> impl IntoResponse {
-    StatusCode::OK.into_response()
 }

@@ -1,4 +1,4 @@
-use auth_service::{Application, Paths};
+use auth_service::{routes::Paths, Application};
 
 pub struct TestApp {
     pub address: String,
@@ -46,6 +46,14 @@ impl TestApp {
     pub async fn login(&self) -> reqwest::Response {
         self.http_client
             .post(&format!("{}{}", &self.address, Paths::Login.as_str()))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn logout(&self) -> reqwest::Response {
+        self.http_client
+            .post(&format!("{}{}", &self.address, Paths::Logout.as_str()))
             .send()
             .await
             .expect("Failed to execute request.")
