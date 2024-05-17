@@ -54,7 +54,7 @@ jobs:
           password: ${{ secrets.DROPLET_PASSWORD }}
           script: |
             cd ~
-            EXPORT BASE_PATH=$BASE_PATH
+            export BASE_PATH=$BASE_PATH
             docker compose down
             docker compose pull
             docker compose up -d
