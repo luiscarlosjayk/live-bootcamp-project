@@ -18,6 +18,12 @@ jobs:
       
       - name: Install newman
         run: npm install -g newman
+
+      - name: Run
+        working-directory: ./auth-service
+        run: |
+          pwd
+          ls -la
       
       - name: Run tests
         working-directory: ./auth-service
