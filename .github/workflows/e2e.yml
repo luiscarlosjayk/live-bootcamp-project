@@ -8,6 +8,8 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    name: Run end to end tests
+
     steps:
       - uses: actions/checkout@v4
 

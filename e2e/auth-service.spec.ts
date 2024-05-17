@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Login', () => {
-    test('should login form', async ({ page }) => {
+    test('login form should submit', async ({ page }) => {
         const emailField = page.getByRole('textbox', { name: 'Email' });
         const passwordField = page.getByRole('textbox', { name: 'Password' });
         const submitButton = page.getByRole('button', { name: 'Log in' });
