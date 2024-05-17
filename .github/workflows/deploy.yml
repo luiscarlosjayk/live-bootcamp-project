@@ -1,5 +1,8 @@
 name: Deploys to Prod
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 on:
   workflow_call:
     secrets:
@@ -48,12 +51,9 @@ jobs:
           docker compose pull
           docker compose up -d
   
-
   tests:
+    name: Test APIs
     runs-on: ubuntu-latest
     needs: deployment
-
-    steps:
-      - name: Test Auth Service API
-        uses: ./.github/workflows/test.yml
+    uses: ./.github/workflows/test.yml
 
