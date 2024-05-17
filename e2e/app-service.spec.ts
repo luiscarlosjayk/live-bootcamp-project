@@ -23,6 +23,7 @@ test.describe('Login', () => {
         const popup = await pagePromise;
 
         const popupURL = new URL(popup.url());
+        console.log(popupURL.pathname);
         expect(popupURL.pathname).toContain('/auth');
     });
 });
