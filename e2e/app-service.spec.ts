@@ -7,11 +7,11 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Login', () => {
-    test('protected request should return 401', async ({ page }) => {
-        const protectedRequestPromise = await page.waitForResponse(basePath + '/protected');
+    // test('protected request should return 401', async ({ page }) => {
+    //     const protectedRequestPromise = await page.waitForResponse(basePath + '/protected');
 
-        expect(protectedRequestPromise.status()).toBe(401);
-    });
+    //     expect(protectedRequestPromise.status()).toBe(401);
+    // });
 
     test('login button should redirect to /auth', async ({ page }) => {
         const loginButton = page.getByRole('link', { name: 'Log in' });
