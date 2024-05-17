@@ -2,10 +2,10 @@ name: Unit Tests & Build
 
 # Trigger the workflow when changes are pushed to the main branch
 on:
-  # push:
-  #   branches:
-  #     - main
-  #     - features/*
+  push:
+    branches:
+      - main
+      - features/*
 
   workflow_dispatch:
     inputs:
