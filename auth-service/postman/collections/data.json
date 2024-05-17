@@ -1,0 +1,29 @@
+[
+    {
+        "body": {
+            "email": "{{$randomEmail}}",
+            "password":  "{{$randomPassword}}",
+            "requires2FA": true
+        }
+    },
+    {
+        "body": {
+            "email": "{{$randomEmail}}",
+            "password":  "{{$randomPassword}}",
+            "requires2FA": false
+        }
+    },
+    {
+        "body": {
+            "email": "{{$randomEmail}}",
+            "password":  "{{$randomPassword}}",
+            "requires2FA": true
+        }
+    },
+    {
+        "body": {
+            "email": "{{$randomEmail}}",
+            "password":  "{{$randomPassword}}"
+        }
+    }
+]

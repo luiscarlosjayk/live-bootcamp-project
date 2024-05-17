@@ -1,0 +1,23 @@
+name: API Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-auth:
+    name: Test Auth Service API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: Install newman
+        run: npm install -g newman
+      
+      - name: Run tests
+        run: newman run ./auth-service/postman/collections/Authentication_Service_API.postman_collection -e ./auth-service/postman/collections/Prod.postman_environment.json -d ./auth-service/postman/collections/data.json -r html -o ./test/auth.postman_report.html --reporters cli
