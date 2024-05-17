@@ -15,6 +15,9 @@ on:
         required: true
         default: false
 
+env:
+  BASE_PATH: ${{ vars.BASE_PATH }}
+
 jobs:
   deploy:
     name: Deploy
