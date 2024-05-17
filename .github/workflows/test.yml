@@ -19,12 +19,6 @@ jobs:
       - name: Install newman
         run: npm install -g newman
 
-      - name: Run
-        working-directory: ./auth-service
-        run: |
-          pwd
-          ls -la
-      
       - name: Run tests
         working-directory: ./auth-service
         run: newman run postman/collections/Authentication_Service_API.postman_collection.json --environment postman/collections/Prod.postman_environment.json --iteration-data postman/collections/data.json --reporters cli
