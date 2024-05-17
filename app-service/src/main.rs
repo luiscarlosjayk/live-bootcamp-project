@@ -32,11 +32,11 @@ struct IndexTemplate {
 }
 
 async fn root() -> impl IntoResponse {
-    let address = "livebootcamp.luiscarlosjayk.com".to_owned();
-    // let mut address = env::var("BASE_PATH").unwrap_or("localhost".to_owned());
-    // if address.is_empty() {
-    //     "localhost".clone_into(&mut address);
-    // }
+    let mut address = env::var("BASE_PATH").unwrap_or("localhost".to_owned());
+    println!("address is: {}", address);
+    if address.is_empty() {
+        "localhost".clone_into(&mut address);
+    }
     let login_link = format!("http://{}/auth", address);
     let logout_link = format!("http://{}/auth/logout", address);
 
