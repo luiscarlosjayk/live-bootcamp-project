@@ -1,0 +1,14 @@
+{
+  "name": "live-bootcamp-project",
+  "version": "1.0.0",
+  "description": "```bash cargo install cargo-watch cd app-service cargo build cd .. cd auth-service cargo build cd .. ```",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "@types/node": "^20.12.12"
+  }
+}
