@@ -4,7 +4,7 @@ services:
     image: luiscarlosjayk/app-service # specify name of image on Docker Hub
     restart: "unless-stopped" # automatically restart container when server crashes
     environment: # set up environment variables
-      AUTH_SERVICE_IP: ${AUTH_SERVICE_IP}
+      BASE_PATH: ${BASE_PATH}
     ports:
       - "8000:8000" # expose port 8000 so that applications outside the container can connect to it 
     depends_on: # only run app-service after auth-service has started
@@ -38,7 +38,6 @@ services:
       NGINX_HOST: localhost
       NGINX_PORT: 80
       NGINX_HTTPS_PORT: 443
-      AUTH_SERVICE_IP: ${AUTH_SERVICE_IP}
       AUTH_SERVICE_PORT: 3000
       APP_SERVICE_PORT: 8000
       DOMAIN: livebootcamp.luiscarlosjayk.com

@@ -3,7 +3,7 @@ services:
     build:
       context: ./app-service # specify directory where local Dockerfile is located
     environment:
-      AUTH_SERVICE_IP: localhost
+      BASE_PATH: localhost
 
   auth-service:
     build:

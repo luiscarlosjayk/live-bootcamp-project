@@ -32,7 +32,7 @@ struct IndexTemplate {
 }
 
 async fn root() -> impl IntoResponse {
-    let mut address = env::var("AUTH_SERVICE_IP").unwrap_or("localhost".to_owned());
+    let mut address = env::var("BASE_PATH").unwrap_or("localhost".to_owned());
     if address.is_empty() {
         "localhost".clone_into(&mut address);
     }
