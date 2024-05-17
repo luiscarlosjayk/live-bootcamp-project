@@ -16,7 +16,7 @@ test.describe('Login', () => {
     test('login button should redirect to /auth', async ({ page }) => {
         const loginButton = page.getByRole('link', { name: 'Log in' });
 
-        console.log(page.url);
+        console.log(page.url());
 
         const pagePromise = page.waitForEvent('popup');
         await loginButton.click();
