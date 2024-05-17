@@ -50,12 +50,11 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{ vars.DROPLET_IP }}
+          envs: BASE_PATH
           username: root
           password: ${{ secrets.DROPLET_PASSWORD }}
           script: |
             cd ~
-            echo $BASE_PATH
-            export BASE_PATH=$BASE_PATH
             docker compose down
             docker compose pull
             docker compose up -d
