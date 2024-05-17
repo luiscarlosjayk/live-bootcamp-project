@@ -47,7 +47,8 @@ export default defineConfig({
   reporter: process.env.CI
     ? [
         // ['dot']
-        ['list']
+        ['list'],
+        ['html'],
       ]
     : [
         ['list'],
