@@ -33,7 +33,6 @@ struct IndexTemplate {
 
 async fn root() -> impl IntoResponse {
     let mut address = env::var("BASE_PATH").unwrap_or("localhost".to_owned());
-    println!("address is: {}", address);
     if address.is_empty() {
         "http://localhost".clone_into(&mut address);
     }
