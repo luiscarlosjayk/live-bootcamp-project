@@ -62,7 +62,7 @@ jobs:
   api-tests:
     name: Test APIs
     needs: deployment
-    uses: ./.github/workflows/test.yml
+    uses: ./.github/workflows/integration-tests.yml
   
   e2e-tests:
     name: End to end tests
