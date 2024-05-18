@@ -26,11 +26,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Echo
-        run: |
-          echo $BASE_PATH;
-          echo "${{ vars.BASE_PATH }}";
-
       - name: Log in to Docker Hub
         uses: docker/login-action@v1
         with:

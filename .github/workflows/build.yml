@@ -25,15 +25,6 @@ jobs:
     needs: build
     secrets: inherit
 
-  echo:
-    name: Echo
-    runs-on: ubuntu-latest
-    steps:
-      - name: Echo
-        run: |
-          echo $BASE_PATH;
-          echo "${{ vars.BASE_PATH }}";
-
   build:
     runs-on: ubuntu-latest
     steps:
