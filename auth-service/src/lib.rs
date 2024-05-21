@@ -1,9 +1,12 @@
-use std::error::Error;
-
+use app_state::AppState;
 use axum::{routing::post, serve::Serve, Router};
+use std::error::Error;
 use tower_http::services::ServeDir;
 
+pub mod app_state;
+pub mod domain;
 pub mod routes;
+pub mod services;
 
 // This struct encapsulates our application-related logic.
 pub struct Application {
@@ -14,20 +17,24 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn build(address: &str) -> Result<Self, Box<dyn Error>> {
+    pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
         // Move the Router definition from `main.rs` to here.
         // Also, remove the `hello` route.
         // We don't need it at this point!
         let router = Router::new()
-            .route(routes::Paths::Signup.as_str(), post(routes::signup))
-            .route(routes::Paths::Login.as_str(), post(routes::login))
-            .route(routes::Paths::Logout.as_str(), post(routes::logout))
-            .route(routes::Paths::Verify2FA.as_str(), post(routes::verify_2fa))
+            .route(domain::path::Paths::Signup.as_str(), post(routes::signup))
+            .route(domain::path::Paths::Login.as_str(), post(routes::login))
+            .route(domain::path::Paths::Logout.as_str(), post(routes::logout))
             .route(
-                routes::Paths::VerifyToken.as_str(),
+                domain::path::Paths::Verify2FA.as_str(),
+                post(routes::verify_2fa),
+            )
+            .route(
+                domain::path::Paths::VerifyToken.as_str(),
                 post(routes::verify_token),
             )
-            .nest_service(routes::Paths::Root.as_str(), ServeDir::new("assets"));
+            .nest_service(domain::path::Paths::Root.as_str(), ServeDir::new("assets"))
+            .with_state(app_state);
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();

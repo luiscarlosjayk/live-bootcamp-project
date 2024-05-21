@@ -1,4 +1,9 @@
-use auth_service::{routes::Paths, Application};
+use auth_service::app_state::AppState;
+use auth_service::domain::path::Paths;
+use auth_service::services::hashmap_user_store::HashmapUserStore;
+use auth_service::Application;
+use std::collections::HashMap;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct TestApp {
@@ -8,7 +13,11 @@ pub struct TestApp {
 
 impl TestApp {
     pub async fn new() -> Self {
-        let app = Application::build("127.0.0.1:0")
+        let user_store = Arc::new(tokio::sync::RwLock::new(HashmapUserStore {
+            users: HashMap::default(),
+        }));
+        let app_state = AppState::new(user_store);
+        let app = Application::build(app_state, "127.0.0.1:0")
             .await
             .expect("Failed to build app");
 
