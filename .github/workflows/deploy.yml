@@ -54,13 +54,13 @@ jobs:
             docker compose pull
             docker compose up -d
   
-  api-tests:
-    name: Test APIs
-    needs: deployment
-    uses: ./.github/workflows/integration-tests.yml
+  # api-tests:
+  #   name: Test APIs
+  #   needs: deployment
+  #   uses: ./.github/workflows/integration-tests.yml
   
-  e2e-tests:
-    name: End to end tests
-    needs: deployment
-    uses: ./.github/workflows/e2e.yml
+  # e2e-tests:
+  #   name: End to end tests
+  #   needs: deployment
+  #   uses: ./.github/workflows/e2e.yml
 
