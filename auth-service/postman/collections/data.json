@@ -1,29 +1,42 @@
 [
     {
         "body": {
-            "email": "{{$randomEmail}}",
-            "password":  "{{$randomPassword}}",
+            "email": "user_test1@test.com",
+            "password":  "12345678",
             "requires2FA": true
-        }
+        },
+        "expected": 201
     },
     {
         "body": {
-            "email": "{{$randomEmail}}",
-            "password":  "{{$randomPassword}}",
+            "email": "user_test2@test.com",
+            "password":  "123",
             "requires2FA": false
-        }
+        },
+        "expected": 400
     },
     {
         "body": {
-            "email": "{{$randomEmail}}",
-            "password":  "{{$randomPassword}}",
+            "email": "user_test3#test.com",
+            "password":  "12345678",
             "requires2FA": true
-        }
+        },
+        "expected": 400
     },
     {
         "body": {
-            "email": "{{$randomEmail}}",
-            "password":  "{{$randomPassword}}"
-        }
+            "email": "",
+            "password":  "12345678",
+            "requires2FA": true
+        },
+        "expected": 400
+    },
+    {
+        "body": {
+            "email": "user_test1@test.com",
+            "password":  "12345678",
+            "requires2FA": true
+        },
+        "expected": 409
     }
 ]
