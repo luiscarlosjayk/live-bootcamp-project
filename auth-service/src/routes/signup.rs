@@ -23,11 +23,11 @@ pub async fn signup(
     let mut user_store = state.user_store.write().await;
 
     // If user already exists then return 409
-    if user_store.get_user(user.email.clone()).is_ok() {
+    if user_store.get_user(user.email.clone()).await.is_ok() {
         return Err(AuthAPIError::UserAlreadyExists);
     }
 
-    let add_user_result = user_store.add_user(user);
+    let add_user_result = user_store.add_user(user).await;
     if add_user_result.is_err() {
         return Err(AuthAPIError::UnexpectedError);
     }
