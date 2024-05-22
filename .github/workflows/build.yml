@@ -6,8 +6,7 @@ on:
     branches:
       - main
       - features/*
-    branches-ignore:
-      - wip/*
+      - '!wip/*'
 
   workflow_dispatch:
     inputs:
