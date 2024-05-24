@@ -8,7 +8,7 @@ async fn should_return_201_if_valid_input() {
     let random_email = get_random_email();
     let body = serde_json::json!({
         "email": random_email,
-        "password": "abcdefgh123",
+        "password": "abcdefgH123",
         "requires2FA": true,
     });
     let response = app.signup(&body).await;

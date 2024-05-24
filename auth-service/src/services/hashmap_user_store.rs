@@ -16,11 +16,22 @@ pub struct HashmapUserStore {
 #[async_trait]
 impl UserStore for HashmapUserStore {
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
-        if self.users.contains_key(user.email.as_ref()) {
+        let user_email = user.email.as_ref();
+        if self.users.contains_key(user_email) {
             Err(UserStoreError::UserAlreadyExists)
         } else {
             self.users.insert(user.email.as_ref().to_string(), user);
             Ok(())
+        }
+    }
+
+    async fn delete_user(&mut self, user: User) -> Result<(), UserStoreError> {
+        let user_email = user.email.as_ref();
+        if self.users.contains_key(user_email) {
+            self.users.remove(user_email);
+            Ok(())
+        } else {
+            Err(UserStoreError::UserNotFound)
         }
     }
 

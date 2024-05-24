@@ -6,6 +6,7 @@ pub enum Paths {
     Logout,
     Verify2FA,
     VerifyToken,
+    Users,
 }
 
 impl Paths {
@@ -17,6 +18,7 @@ impl Paths {
             Self::Logout => "/logout",
             Self::Verify2FA => "/verify-2fa",
             Self::VerifyToken => "/verify-token",
+            Self::Users => "/users",
         }
     }
 }
@@ -30,6 +32,7 @@ impl std::fmt::Display for Paths {
             Self::Logout => "/logout",
             Self::Verify2FA => "/verify-2fa",
             Self::VerifyToken => "/verify-token",
+            Self::Users => "/users",
         };
         write!(f, "{}", output)
     }

@@ -6,7 +6,7 @@ pub struct Email(String);
 impl Email {
     pub fn parse(email: String) -> Result<Email, ValidationError> {
         if email.validate_email() {
-            Ok(Email(email))
+            Ok(Self(email))
         } else {
             Err(ValidationError::new("Invalid email"))
         }
@@ -25,17 +25,19 @@ mod tests {
     use fake::{faker::internet::raw::FreeEmail, locales::EN, Fake};
 
     #[test]
-    fn valid_email_should_return_result() {
-        let valid_email: String = FreeEmail(EN).fake();
-
-        assert!(Email::parse(valid_email).is_ok());
+    fn empty_string_is_rejected() {
+        let email = "".to_string();
+        assert!(Email::parse(email).is_err());
     }
-
     #[test]
-    fn invalid_email_should_return_error() {
-        let invalid_email: String = "invalid".to_string();
-
-        assert!(Email::parse(invalid_email).is_err());
+    fn email_missing_at_symbol_is_rejected() {
+        let email = "ursuladomain.com".to_string();
+        assert!(Email::parse(email).is_err());
+    }
+    #[test]
+    fn email_missing_subject_is_rejected() {
+        let email = "@domain.com".to_string();
+        assert!(Email::parse(email).is_err());
     }
 
     #[test]
@@ -45,5 +47,20 @@ mod tests {
         let email_str = email.as_ref();
 
         assert_eq!(valid_email, email_str.to_string());
+    }
+
+    #[derive(Debug, Clone)]
+    struct ValidEmailFixture(pub String);
+
+    impl quickcheck::Arbitrary for ValidEmailFixture {
+        fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
+            let email = FreeEmail(EN).fake_with_rng(g);
+            Self(email)
+        }
+    }
+
+    #[quickcheck_macros::quickcheck]
+    fn valid_emails_are_parsed_successfully(valid_email: ValidEmailFixture) -> bool {
+        Email::parse(valid_email.0).is_ok()
     }
 }

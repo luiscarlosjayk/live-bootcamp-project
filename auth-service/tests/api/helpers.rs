@@ -88,6 +88,19 @@ impl TestApp {
             .await
             .expect("Failed to execute request.")
     }
+
+    pub async fn delete_user(&self, email: String) -> reqwest::Response {
+        self.http_client
+            .delete(&format!(
+                "{}{}/{}",
+                &self.address,
+                Paths::Users.as_str(),
+                email
+            ))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
 }
 
 pub fn get_random_email() -> String {

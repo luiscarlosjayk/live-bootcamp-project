@@ -1,5 +1,10 @@
 use app_state::AppState;
-use axum::{response::IntoResponse, routing::post, serve::Serve, Json, Router};
+use axum::{
+    response::IntoResponse,
+    routing::{delete, post},
+    serve::Serve,
+    Json, Router,
+};
 use domain::AuthAPIError;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -36,6 +41,10 @@ impl Application {
                 domain::path::Paths::VerifyToken.as_str(),
                 post(routes::verify_token),
             )
+            .route(
+                format!("{}/:email", domain::path::Paths::Users.as_str()).as_str(),
+                delete(routes::delete),
+            )
             .nest_service(domain::path::Paths::Root.as_str(), ServeDir::new("assets"))
             .with_state(app_state);
 
@@ -66,6 +75,7 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::UnexpectedError => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
             }
+            AuthAPIError::UserNotFound => (StatusCode::NOT_FOUND, "User not found"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_owned(),

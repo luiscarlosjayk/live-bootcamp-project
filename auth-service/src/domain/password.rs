@@ -27,7 +27,7 @@ impl Password {
         let is_valid_password = regex.is_match(Input::new(password.as_str()));
 
         if is_valid_password {
-            Ok(Password(password))
+            Ok(Self(password))
         } else {
             Err(ValidationError::new("Invalid password"))
         }
