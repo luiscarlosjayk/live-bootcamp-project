@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "```bash cargo install cargo-watch cd app-service cargo build cd .. cd auth-service cargo build cd .. ```",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test:e2e": "npx playwright test"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
