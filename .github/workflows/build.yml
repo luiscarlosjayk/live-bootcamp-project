@@ -53,7 +53,7 @@ jobs:
           toolchain: stable
 
       - name: Install openssl
-        run: sudo apt-get install libssl-dev
+        run: sudo apt-get install pkg-config
 
       - name: Build and test app-service code
         working-directory: ./app-service
