@@ -17,10 +17,10 @@ on:
   
   workflow_dispatch:
 
-# env:
-  # BASE_PATH: ${{ vars.BASE_PATH }}
-  # ENVIRONMENT: "remote"
-  # RECAPTCHA_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
+env:
+  BASE_PATH: ${{ vars.BASE_PATH }}
+  ENVIRONMENT: "remote"
+  RECAPTCHA_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
 
 jobs:
   deployment:
@@ -49,15 +49,12 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{ vars.DROPLET_IP }}
-          # envs: BASE_PATH, ENVIRONMENT, RECAPTCHA_SECRET
+          envs: BASE_PATH, ENVIRONMENT, RECAPTCHA_SECRET
 
           username: root
           password: ${{ secrets.DROPLET_PASSWORD }}
           script: |
             cd ~
-            export BASE_PATH=${{ vars.BASE_PATH }}
-            export ENVIRONMENT=remote
-            export RECAPTCHA_SECRET=${{ secrets.RECAPTCHA_SECRET }}
             docker compose down
             docker compose pull
             docker compose up -d

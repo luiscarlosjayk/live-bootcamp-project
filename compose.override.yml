@@ -10,6 +10,7 @@ services:
     build:
       context: ./auth-service # specify directory where local Dockerfile is located
     environment:
+      BASE_PATH: localhost
       ENVIRONMENT: local
 
   reverse-proxy:
