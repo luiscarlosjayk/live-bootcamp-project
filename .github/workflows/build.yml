@@ -16,10 +16,10 @@ on:
         required: true
         default: false
 
-env:
-  BASE_PATH: "${{ vars.BASE_PATH }}"
-  ENVIRONMENT: "remote"
-  RECAPTCHA_SECRET: "${{ secrets.RECAPTCHA_SECRET }}"
+# env:
+#   BASE_PATH: "${{ vars.BASE_PATH }}"
+#   ENVIRONMENT: "remote"
+#   RECAPTCHA_SECRET: "${{ secrets.RECAPTCHA_SECRET }}"
 
 jobs:
   deploy:

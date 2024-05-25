@@ -24,6 +24,8 @@ services:
       - certs-network
     environment:
       ENVIRONMENT: remote
+      BASE_PATH: ${BASE_PATH}
+      RECAPTCHA_SECRET: ${RECAPTCHA_SECRET}
   
   reverse-proxy:
     container_name: nginx
