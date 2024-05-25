@@ -18,9 +18,9 @@ on:
   workflow_dispatch:
 
 env:
-  BASE_PATH: ${{ vars.BASE_PATH }}
+  BASE_PATH: "${{ vars.BASE_PATH }}"
   ENVIRONMENT: "remote"
-  RECAPTCHA_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
+  RECAPTCHA_SECRET: "${{ secrets.RECAPTCHA_SECRET }}"
 
 jobs:
   deployment:

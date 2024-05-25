@@ -17,9 +17,9 @@ on:
         default: false
 
 env:
-  BASE_PATH: ${{ vars.BASE_PATH }}
+  BASE_PATH: "${{ vars.BASE_PATH }}"
   ENVIRONMENT: "remote"
-  RECAPTCHA_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
+  RECAPTCHA_SECRET: "${{ secrets.RECAPTCHA_SECRET }}"
 
 jobs:
   deploy:
