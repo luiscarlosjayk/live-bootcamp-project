@@ -52,6 +52,8 @@ jobs:
           envs:
             BASE_PATH
             ENVIRONMENT
+            RECAPTCHA_SECRET
+
           username: root
           password: ${{ secrets.DROPLET_PASSWORD }}
           script: |
