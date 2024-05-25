@@ -49,10 +49,7 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{ vars.DROPLET_IP }}
-          envs:
-            BASE_PATH
-            ENVIRONMENT
-            RECAPTCHA_SECRET
+          envs: BASE_PATH,ENVIRONMENT,RECAPTCHA_SECRET
 
           username: root
           password: ${{ secrets.DROPLET_PASSWORD }}
