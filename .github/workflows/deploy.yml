@@ -19,7 +19,7 @@ on:
 
 env:
   BASE_PATH: ${{ vars.BASE_PATH }}
-  ENVIRONMENT: remote
+  ENVIRONMENT: "remote"
   RECAPTCHA_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
 
 jobs:
