@@ -76,6 +76,7 @@ impl IntoResponse for AuthAPIError {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
             }
             AuthAPIError::UserNotFound => (StatusCode::NOT_FOUND, "User not found"),
+            AuthAPIError::InvalidRecaptcha => (StatusCode::BAD_REQUEST, "Invalid captcha"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_owned(),

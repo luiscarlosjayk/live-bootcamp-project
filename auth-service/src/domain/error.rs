@@ -3,4 +3,5 @@ pub enum AuthAPIError {
     UserNotFound,
     InvalidCredentials,
     UnexpectedError,
+    InvalidRecaptcha,
 }

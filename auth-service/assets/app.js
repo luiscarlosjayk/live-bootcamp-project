@@ -1,3 +1,4 @@
+const recaptcha_client_id = "6LfMkucpAAAAAFvpGkWuxSxc3ohij7YIclleLh4D";
 const loginSection = document.getElementById("login-section");
 const twoFASection = document.getElementById("2fa-section");
 const signupSection = document.getElementById("signup-section");
@@ -39,45 +40,49 @@ const loginErrAlter = document.getElementById("login-err-alert");
 loginButton.addEventListener("click", (e) => {
     e.preventDefault();
 
-    const email = loginForm.email.value;
-    const password = loginForm.password.value;
-
-    fetch(`${window.location.origin}/auth/login`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-    }).then(response => {
-        if (response.status === 206) {
-            TwoFAForm.email.value = email;
-            response.json().then(data => {
-                TwoFAForm.login_attempt_id.value = data.loginAttemptId;
-            });
-
-            loginForm.email.value = "";
-            loginForm.password.value = "";
-
-            loginSection.style.display = "none";
-            twoFASection.style.display = "block";
-            signupSection.style.display = "none";
-            loginErrAlter.style.display = "none";
-        } else if (response.status === 200) {
-            loginForm.email.value = "";
-            loginForm.password.value = "";
-            loginErrAlter.style.display = "none";
-            alert("You have successfully logged in.");
-        } else {
-            response.json().then(data => {
-                let error_msg = data.error;
-                if (error_msg !== undefined && error_msg !== null && error_msg !== "") {
-                    loginErrAlter.innerHTML = `<span><strong>Error: </strong>${error_msg}</span>`;
-                    loginErrAlter.style.display = "block";
-                } else {
+    grecaptcha.ready(function() {
+        grecaptcha.execute(recaptcha_client_id, {action: "LOGIN"}).then(function(token) {
+            const email = loginForm.email.value;
+            const password = loginForm.password.value;
+        
+            fetch(`${window.location.origin}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password, recaptcha: token }),
+            }).then(response => {
+                if (response.status === 206) {
+                    TwoFAForm.email.value = email;
+                    response.json().then(data => {
+                        TwoFAForm.login_attempt_id.value = data.loginAttemptId;
+                    });
+        
+                    loginForm.email.value = "";
+                    loginForm.password.value = "";
+        
+                    loginSection.style.display = "none";
+                    twoFASection.style.display = "block";
+                    signupSection.style.display = "none";
                     loginErrAlter.style.display = "none";
+                } else if (response.status === 200) {
+                    loginForm.email.value = "";
+                    loginForm.password.value = "";
+                    loginErrAlter.style.display = "none";
+                    alert("You have successfully logged in.");
+                } else {
+                    response.json().then(data => {
+                        let error_msg = data.error;
+                        if (error_msg !== undefined && error_msg !== null && error_msg !== "") {
+                            loginErrAlter.innerHTML = `<span><strong>Error: </strong>${error_msg}</span>`;
+                            loginErrAlter.style.display = "block";
+                        } else {
+                            loginErrAlter.style.display = "none";
+                        }
+                    });
                 }
             });
-        }
+        });
     });
 });
 
@@ -88,37 +93,41 @@ const signupErrAlter = document.getElementById("signup-err-alert");
 signupButton.addEventListener("click", (e) => {
     e.preventDefault();
 
-    const email = signupForm.email.value;
-    const password = signupForm.password.value;
-    const requires2FA = signupForm.twoFA.checked;
-
-    fetch(`${window.location.origin}/auth/signup`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, requires2FA }),
-    }).then(response => {
-        if (response.ok) {
-            signupForm.email.value = "";
-            signupForm.password.value = "";
-            signupForm.twoFA.checked = false;
-            signupErrAlter.style.display = "none";
-            alert("You have successfully created a user.");
-            loginSection.style.display = "block";
-            twoFASection.style.display = "none";
-            signupSection.style.display = "none";
-        } else {
-            response.json().then(data => {
-                let error_msg = data.error;
-                if (error_msg !== undefined && error_msg !== null && error_msg !== "") {
-                    signupErrAlter.innerHTML = `<span><strong>Error: </strong>${error_msg}</span>`;
-                    signupErrAlter.style.display = "block";
-                } else {
+    grecaptcha.ready(function() {
+        grecaptcha.execute(recaptcha_client_id, {action: "SIGNUP"}).then(function(token) {
+            const email = signupForm.email.value;
+            const password = signupForm.password.value;
+            const requires2FA = signupForm.twoFA.checked;
+        
+            fetch(`${window.location.origin}/auth/signup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password, requires2FA, recaptcha: token }),
+            }).then(response => {
+                if (response.ok) {
+                    signupForm.email.value = "";
+                    signupForm.password.value = "";
+                    signupForm.twoFA.checked = false;
                     signupErrAlter.style.display = "none";
+                    alert("You have successfully created a user.");
+                    loginSection.style.display = "block";
+                    twoFASection.style.display = "none";
+                    signupSection.style.display = "none";
+                } else {
+                    response.json().then(data => {
+                        let error_msg = data.error;
+                        if (error_msg !== undefined && error_msg !== null && error_msg !== "") {
+                            signupErrAlter.innerHTML = `<span><strong>Error: </strong>${error_msg}</span>`;
+                            signupErrAlter.style.display = "block";
+                        } else {
+                            signupErrAlter.style.display = "none";
+                        }
+                    });
                 }
             });
-        }
+        });
     });
 });
 

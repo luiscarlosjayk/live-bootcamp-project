@@ -18,6 +18,7 @@ on:
 
 env:
   BASE_PATH: ${{ vars.BASE_PATH }}
+  ENVIRONMENT: remote
 
 jobs:
   deploy:

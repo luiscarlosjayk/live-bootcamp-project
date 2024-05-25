@@ -17,6 +17,8 @@ on:
 
 env:
   BASE_PATH: ${{ vars.BASE_PATH }}
+  ENVIRONMENT: remote
+  RECAPTCHA_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
 
 jobs:
   deployment:
@@ -45,7 +47,9 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{ vars.DROPLET_IP }}
-          envs: BASE_PATH
+          envs:
+            BASE_PATH
+            ENVIRONMENT
           username: root
           password: ${{ secrets.DROPLET_PASSWORD }}
           script: |

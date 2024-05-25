@@ -11,6 +11,7 @@ jobs:
     name: Run end to end tests
     env:
       AUTH_SERVICE: https://livebootcamp.luiscarlosjayk.com
+      ENVIRONMENT: remote
 
     steps:
       - uses: actions/checkout@v4
