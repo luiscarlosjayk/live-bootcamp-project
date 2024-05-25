@@ -12,6 +12,8 @@ on:
         required: true
       DROPLET_PASSWORD:
         required: true
+      RECAPTCHA_SECRET:
+        required: true  
   
   workflow_dispatch:
 
