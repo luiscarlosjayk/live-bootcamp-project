@@ -1,5 +1,6 @@
 pub mod data_stores;
 pub mod email;
+pub mod environment;
 pub mod error;
 pub mod password;
 pub mod path;

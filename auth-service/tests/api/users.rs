@@ -14,7 +14,8 @@ async fn should_return_200_if_deletes_user_successfully() {
     let signup_body = serde_json::json!({
         "email": random_email,
         "password": random_password,
-        "requires2FA": true
+        "requires2FA": true,
+        "recaptcha": "recaptcha",
     });
     let signup_response = app.signup(&signup_body).await;
 

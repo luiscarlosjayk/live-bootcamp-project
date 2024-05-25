@@ -3,6 +3,7 @@ use auth_service::domain::path::Paths;
 use auth_service::services::hashmap_user_store::HashmapUserStore;
 use auth_service::Application;
 use std::collections::HashMap;
+use std::env;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -13,6 +14,14 @@ pub struct TestApp {
 
 impl TestApp {
     pub async fn new() -> Self {
+        /*
+         * How to test recaptcha:
+         * https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha.-what-should-i-do
+         */
+        env::set_var(
+            "RECAPTCHA_SECRET",
+            "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
+        );
         let user_store = Arc::new(tokio::sync::RwLock::new(HashmapUserStore {
             users: HashMap::default(),
         }));

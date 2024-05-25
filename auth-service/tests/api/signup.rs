@@ -10,6 +10,7 @@ async fn should_return_201_if_valid_input() {
         "email": random_email,
         "password": "abcdefgH123",
         "requires2FA": true,
+        "recaptcha": "recaptcha",
     });
     let response = app.signup(&body).await;
 
@@ -44,21 +45,25 @@ async fn should_return_400_if_invalid_input() {
             "email": "email1", // Doesn't contain @
             "password": "12345678",
             "requires2FA": true,
+            "recaptcha": "recaptcha",
         }),
         serde_json::json!({
             "email": "", // Empty email
             "password": "12345678",
             "requires2FA": true,
+            "recaptcha": "recaptcha",
         }),
         serde_json::json!({
             "email": "email3@test.com",
             "password": "1234567", // Password has less than 8 characters
             "requires2FA": true,
+            "recaptcha": "recaptcha",
         }),
         serde_json::json!({
             "email": "email3@test.com",
             "password": "1234567", // Password has less than 8 characters
             "requires2FA": true,
+            "recaptcha": "recaptcha",
         }),
     ];
 
@@ -91,6 +96,7 @@ async fn should_return_409_if_email_already_exists() {
         "email": "testuser409@test.com",
         "password": "123456789",
         "requires2FA": true,
+        "recaptcha": "recaptcha",
     });
 
     let response = app.signup(&body).await;

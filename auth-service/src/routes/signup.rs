@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     app_state::AppState,
-    domain::{AuthAPIError, User},
+    domain::{environment::get_env, AuthAPIError, User},
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
@@ -40,15 +40,14 @@ pub async fn signup(
     let email = request.email;
     let password = request.password;
     let requires_2fa = request.requires_2fa;
+
+    let recaptcha_secret = get_env("RECAPTCHA_SECRET".to_string());
     let recaptcha_response = request.recaptcha;
-    let recaptcha_secret = state.recaptcha_secret;
     let mut params = HashMap::new();
     let mut headers = reqwest::header::HeaderMap::new();
 
     params.insert("secret", &recaptcha_secret);
     params.insert("response", &recaptcha_response);
-
-    // headers.insert(reqwest::header::HOST, "127.0.0.1".parse().unwrap());
 
     let api_client = reqwest::Client::builder().build().unwrap();
     let recaptcha_verify_url = "https://www.google.com/recaptcha/api/siteverify".to_string();
