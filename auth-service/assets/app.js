@@ -99,7 +99,7 @@ signupButton.addEventListener("click", (e) => {
             const password = signupForm.password.value;
             const requires2FA = signupForm.twoFA.checked;
         
-            fetch(`${window.location.origin}/signup`, {
+            fetch(`${window.location.origin}/auth/signup`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
