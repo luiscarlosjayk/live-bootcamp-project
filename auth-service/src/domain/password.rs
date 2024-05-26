@@ -1,11 +1,11 @@
 use regex_automata::{meta::Regex, Input};
 use validator::ValidationError;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub struct Password(String);
 
 /**
- * Password regex pattern:
+ * Password regex pattern: (NOT WORKING)
  * r"^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*#?&])[^\\s]{8,}$""
  *
  * This regex enforces:
@@ -21,10 +21,9 @@ pub struct Password(String);
 
 impl Password {
     pub fn parse(password: String) -> Result<Password, ValidationError> {
-        let regex = Regex::new(r"^[a-zA-Z0-9]{8,}$")
-            // Regex::new(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$") // @todo: Check why this doesn't work
-            .map_err(|_| ValidationError::new("Could not build regex"))?;
-        let is_valid_password = regex.is_match(Input::new(password.as_str()));
+        let is_valid_password = validate_password(&password);
+
+        dbg!(&is_valid_password, &password);
 
         if is_valid_password {
             Ok(Self(password))
@@ -32,6 +31,32 @@ impl Password {
             Err(ValidationError::new("Invalid password"))
         }
     }
+}
+
+fn validate_password(password: &str) -> bool {
+    password_has_lowercase(password)
+        && password_has_uppercase(password)
+        && password_has_required_length(password)
+        && password_has_numbers(password)
+}
+
+fn password_has_uppercase(password: &str) -> bool {
+    let regex = Regex::new(r"[A-Z]+").expect("Could'n build regex pattern");
+    regex.is_match(Input::new(password))
+}
+
+fn password_has_lowercase(password: &str) -> bool {
+    let regex = Regex::new(r"[a-z]+").expect("Could'n build regex pattern");
+    regex.is_match(Input::new(password))
+}
+
+fn password_has_numbers(password: &str) -> bool {
+    let regex = Regex::new(r"[0-9]+").expect("Could'n build regex pattern");
+    regex.is_match(Input::new(password))
+}
+
+fn password_has_required_length(password: &str) -> bool {
+    password.len() > 8
 }
 
 impl AsRef<str> for Password {
@@ -43,28 +68,30 @@ impl AsRef<str> for Password {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use fake::{faker::internet::raw::Password as FakerPassword, locales::*, Fake};
-    use std::ops::Range;
 
     #[test]
     fn valid_password_should_return_result() {
-        let valid_password: String = FakerPassword(EN, Range { start: 8, end: 12 }).fake();
-        println!("password under test: {valid_password}");
+        let valid_password = "abcDEF123";
 
-        assert!(Password::parse(valid_password).is_ok());
+        assert!(Password::parse(valid_password.to_string()).is_ok());
     }
 
     #[test]
     fn invalid_password_should_return_error() {
-        let invalid_password: String = "invalid".to_string();
+        let invalid_password: String = "ABCDEF123".to_string(); // Misses lowercases
+        assert!(Password::parse(invalid_password).is_err());
 
+        let invalid_password: String = "abcdef123".to_string(); // Misses uppercases
+        assert!(Password::parse(invalid_password).is_err());
+
+        let invalid_password: String = "abcdEFGH".to_string(); // Misses numbers
         assert!(Password::parse(invalid_password).is_err());
     }
 
     #[test]
     fn should_be_able_to_convert_a_borrowed_password_to_str() {
-        let valid_password: String = FakerPassword(EN, Range { start: 8, end: 12 }).fake();
-        let password = Password::parse(valid_password.clone()).unwrap();
+        let valid_password = "abcDEF123".to_string();
+        let password = Password::parse(valid_password.clone()).expect("Couldn't parse password");
         let password_str = password.as_ref();
 
         assert_eq!(valid_password, password_str.to_string());

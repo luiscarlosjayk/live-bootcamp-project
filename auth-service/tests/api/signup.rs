@@ -1,12 +1,13 @@
 use auth_service::{routes::SignupResponse, ErrorResponse};
+use serde_json::json;
 
 use crate::helpers::{get_random_email, TestApp};
 
 #[tokio::test]
-async fn should_return_201_if_valid_input() {
+async fn signup_should_return_201_if_valid_input() {
     let app = TestApp::new().await;
     let random_email = get_random_email();
-    let body = serde_json::json!({
+    let body = json!({
         "email": random_email,
         "password": "abcdefgH123",
         "requires2FA": true,
@@ -31,7 +32,7 @@ async fn should_return_201_if_valid_input() {
 }
 
 #[tokio::test]
-async fn should_return_400_if_invalid_input() {
+async fn signup_should_return_400_if_invalid_input() {
     // The signup route should return a 400 HTTP status code if an invalid input is sent.
     // The input is considered invalid if:
     // - The email is empty or does not contain '@'
@@ -41,25 +42,25 @@ async fn should_return_400_if_invalid_input() {
     // make HTTP calls to the signup route. Assert a 400 HTTP status code is returned.
     let app = TestApp::new().await;
     let invalid_inputs = [
-        serde_json::json!({
+        json!({
             "email": "email1", // Doesn't contain @
             "password": "12345678",
             "requires2FA": true,
             "recaptcha": "recaptcha",
         }),
-        serde_json::json!({
+        json!({
             "email": "", // Empty email
             "password": "12345678",
             "requires2FA": true,
             "recaptcha": "recaptcha",
         }),
-        serde_json::json!({
+        json!({
             "email": "email3@test.com",
             "password": "1234567", // Password has less than 8 characters
             "requires2FA": true,
             "recaptcha": "recaptcha",
         }),
-        serde_json::json!({
+        json!({
             "email": "email3@test.com",
             "password": "1234567", // Password has less than 8 characters
             "requires2FA": true,
@@ -89,12 +90,12 @@ async fn should_return_400_if_invalid_input() {
 }
 
 #[tokio::test]
-async fn should_return_409_if_email_already_exists() {
+async fn signup_should_return_409_if_email_already_exists() {
     // Call the signup route twice. The second request should fail with a 409 HTTP status code
     let app = TestApp::new().await;
-    let body = serde_json::json!({
+    let body = json!({
         "email": "testuser409@test.com",
-        "password": "123456789",
+        "password": "abcDEF123",
         "requires2FA": true,
         "recaptcha": "recaptcha",
     });

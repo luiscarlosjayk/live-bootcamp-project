@@ -1,11 +1,10 @@
-use std::collections::HashMap;
-
 use crate::{
     app_state::AppState,
-    domain::{environment::get_env, AuthAPIError, User},
+    domain::{environment::get_env, AuthAPIError, Email, Password, User},
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Deserialize, Debug)]
 pub struct RecaptchaResponse {
@@ -32,29 +31,17 @@ pub struct SignupRequest {
     pub recaptcha: String,
 }
 
-pub async fn signup(
-    State(state): State<AppState>,
-    Json(request): Json<SignupRequest>,
-) -> Result<impl IntoResponse, AuthAPIError> {
-    // Create a new `User` instance using data in the `request`
-    let email = request.email;
-    let password = request.password;
-    let requires_2fa = request.requires_2fa;
-
+async fn validate_recaptcha(token: String) -> bool {
     let recaptcha_secret = get_env("RECAPTCHA_SECRET".to_string());
-    let recaptcha_response = request.recaptcha;
     let mut params = HashMap::new();
     let mut headers = reqwest::header::HeaderMap::new();
 
     params.insert("secret", &recaptcha_secret);
-    params.insert("response", &recaptcha_response);
+    params.insert("response", &token);
 
     let api_client = reqwest::Client::builder().build().unwrap();
     let recaptcha_verify_url = "https://www.google.com/recaptcha/api/siteverify".to_string();
-    let data = format!(
-        "secret={}&response={}",
-        recaptcha_secret, recaptcha_response
-    );
+    let data = format!("secret={}&response={}", recaptcha_secret, token);
     let content_length = data.len();
 
     headers.insert(
@@ -66,43 +53,37 @@ pub async fn signup(
         "application/x-www-form-urlencoded".parse().unwrap(),
     );
 
-    let recaptcha_verify_response = api_client
+    let recaptcha_response = api_client
         .post(&recaptcha_verify_url)
         .headers(headers)
         .form(&params)
         .send()
         .await;
 
-    if recaptcha_verify_response.is_err() {
+    recaptcha_response.is_ok()
+}
+
+pub async fn signup(
+    State(state): State<AppState>,
+    Json(request): Json<SignupRequest>,
+) -> Result<impl IntoResponse, AuthAPIError> {
+    // Create a new `User` instance using data in the `request`
+    let email = Email::parse(request.email).map_err(|_| AuthAPIError::InvalidCredentials)?;
+    let password =
+        Password::parse(request.password).map_err(|_| AuthAPIError::InvalidCredentials)?;
+    let requires_2fa = request.requires_2fa;
+
+    let is_recaptcha_valid = validate_recaptcha(request.recaptcha).await;
+
+    if !is_recaptcha_valid {
         return Err(AuthAPIError::InvalidRecaptcha);
-    } else if let Ok(r) = recaptcha_verify_response {
-        let recaptcha_verify_response_body: RecaptchaResponse =
-            r.json::<RecaptchaResponse>().await.unwrap();
-
-        if !recaptcha_verify_response_body.success {
-            return Err(AuthAPIError::InvalidRecaptcha);
-        } else {
-            println!(
-                "Recaptcha verification failed: {:?}",
-                recaptcha_verify_response_body.error_codes
-            );
-        }
     }
-
-    if !email.contains('@') || email.is_empty() || password.len() < 8 {
-        return Err(AuthAPIError::InvalidCredentials);
-    }
-
-    let user = User::new(email, password, requires_2fa);
 
     let mut user_store = state.user_store.write().await;
+    let user = User::new(email, password, requires_2fa);
 
     // If user already exists then return 409
-    if user_store
-        .get_user(user.email.as_ref().to_string())
-        .await
-        .is_ok()
-    {
+    if user_store.get_user(&user.email).await.is_ok() {
         return Err(AuthAPIError::UserAlreadyExists);
     }
 

@@ -1,4 +1,7 @@
-use crate::{app_state::AppState, domain::AuthAPIError};
+use crate::{
+    app_state::AppState,
+    domain::{AuthAPIError, Email},
+};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -6,19 +9,15 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
-use validator::ValidateEmail;
 
 pub async fn delete(
     Path(request_email): Path<String>,
     State(state): State<AppState>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
-    if !ValidateEmail::validate_email(&request_email) {
-        return Err(AuthAPIError::UserNotFound);
-    }
-
+    let email = Email::parse(request_email).map_err(|_| AuthAPIError::InvalidCredentials)?;
     let mut user_store = state.user_store.write().await;
 
-    if let Ok(user) = user_store.get_user(request_email).await {
+    if let Ok(user) = user_store.get_user(&email).await {
         let _ = user_store.delete_user(user).await;
         let response = Json(DeleteUserResponse {
             message: "User deleted successfully!".to_string(),

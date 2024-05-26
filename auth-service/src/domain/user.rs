@@ -8,13 +8,10 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(email: String, password: String, requires_2fa: bool) -> User {
-        let email = Email::parse(email).expect("Email was not able to be parsed");
-        let password = Password::parse(password).expect("Password was not able to be pared");
-
+    pub fn new(email: Email, password: Password, requires_2fa: bool) -> User {
         User {
-            email: email.clone(),
-            password: password.clone(),
+            email,
+            password,
             requires_2fa,
         }
     }
