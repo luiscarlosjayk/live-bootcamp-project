@@ -24,7 +24,7 @@ pub async fn delete(
         });
         Ok((StatusCode::OK, response))
     } else {
-        Err(AuthAPIError::UserNotFound)
+        Err(AuthAPIError::InvalidCredentials)
     }
 }
 

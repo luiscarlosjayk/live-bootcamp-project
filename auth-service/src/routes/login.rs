@@ -1,6 +1,6 @@
 use crate::{
     app_state::AppState,
-    domain::{data_stores::UserStoreError, AuthAPIError, Email, Password},
+    domain::{AuthAPIError, Email, Password},
 };
 use axum::{extract::State, response::IntoResponse, Json};
 use reqwest::StatusCode;
@@ -30,12 +30,12 @@ pub async fn login(
     user_store
         .validate_user(&email, &password)
         .await
-        .map_err(|err| match err {
-            UserStoreError::UserAlreadyExists => AuthAPIError::UserAlreadyExists,
-            UserStoreError::UserNotFound => AuthAPIError::UserNotFound,
-            UserStoreError::InvalidCredentials => AuthAPIError::InvalidCredentials,
-            UserStoreError::UnexpectedError => AuthAPIError::UnexpectedError,
-        })?;
+        .map_err(|_| AuthAPIError::IncorrectCredentials)?;
+
+    user_store
+        .get_user(&email)
+        .await
+        .map_err(|_| AuthAPIError::IncorrectCredentials)?;
 
     let response = Json(LoginResponse {
         message: "Logged in successfully".to_string(),
