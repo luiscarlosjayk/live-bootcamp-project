@@ -1,19 +1,17 @@
-use auth_service::{routes::SignupResponse, ErrorResponse};
-use serde_json::json;
-
 use crate::helpers::{get_random_email, TestApp};
+use auth_service::{routes::SignupResponse, ErrorResponse};
 
 #[tokio::test]
 async fn signup_should_return_201_if_valid_input() {
     let app = TestApp::new().await;
     let random_email = get_random_email();
-    let body = json!({
+    let body = serde_json::json!({
         "email": random_email,
         "password": "abcdefgH123",
         "requires2FA": true,
         "recaptcha": "recaptcha",
     });
-    let response = app.signup(&body).await;
+    let response = app.post_signup(&body).await;
 
     assert_eq!(response.status().as_u16(), 201);
 
@@ -42,25 +40,25 @@ async fn signup_should_return_400_if_invalid_input() {
     // make HTTP calls to the signup route. Assert a 400 HTTP status code is returned.
     let app = TestApp::new().await;
     let invalid_inputs = [
-        json!({
+        serde_json::json!({
             "email": "email1", // Doesn't contain @
             "password": "12345678",
             "requires2FA": true,
             "recaptcha": "recaptcha",
         }),
-        json!({
+        serde_json::json!({
             "email": "", // Empty email
             "password": "12345678",
             "requires2FA": true,
             "recaptcha": "recaptcha",
         }),
-        json!({
+        serde_json::json!({
             "email": "email3@test.com",
             "password": "1234567", // Password has less than 8 characters
             "requires2FA": true,
             "recaptcha": "recaptcha",
         }),
-        json!({
+        serde_json::json!({
             "email": "email3@test.com",
             "password": "1234567", // Password has less than 8 characters
             "requires2FA": true,
@@ -69,7 +67,7 @@ async fn signup_should_return_400_if_invalid_input() {
     ];
 
     for invalid_body in invalid_inputs.iter() {
-        let response = app.signup(invalid_body).await;
+        let response = app.post_signup(invalid_body).await;
 
         assert_eq!(
             response.status().as_u16(),
@@ -93,16 +91,16 @@ async fn signup_should_return_400_if_invalid_input() {
 async fn signup_should_return_409_if_email_already_exists() {
     // Call the signup route twice. The second request should fail with a 409 HTTP status code
     let app = TestApp::new().await;
-    let body = json!({
+    let body = serde_json::json!({
         "email": "testuser409@test.com",
         "password": "abcDEF123",
         "requires2FA": true,
         "recaptcha": "recaptcha",
     });
 
-    let response = app.signup(&body).await;
+    let response = app.post_signup(&body).await;
     assert_eq!(response.status().as_u16(), 201);
-    let response = app.signup(&body).await;
+    let response = app.post_signup(&body).await;
     assert_eq!(response.status().as_u16(), 409);
     assert_eq!(
         response

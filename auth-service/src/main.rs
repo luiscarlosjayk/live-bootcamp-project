@@ -1,5 +1,4 @@
 use auth_service::app_state::AppState;
-use auth_service::domain::environment::is_local;
 use auth_service::services::hashmap_user_store::HashmapUserStore;
 use auth_service::Application;
 use dotenvy::dotenv;
@@ -9,9 +8,7 @@ use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() {
-    if is_local() {
-        dotenv().expect("Couldn't load the .env file in local environment.");
-    }
+    dotenv().ok();
     let user_store = Arc::new(RwLock::new(HashmapUserStore {
         users: HashMap::default(),
     }));

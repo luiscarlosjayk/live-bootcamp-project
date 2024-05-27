@@ -53,14 +53,15 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - name: Install openssl
-        run: |
-          sudo apt-get install pkg-config
-          sudo apt-get install libssl-dev
+      # - name: Install openssl
+      #   run: |
+      #     sudo apt-get install pkg-config
+      #     sudo apt-get install libssl-dev
 
       - name: Build and test app-service code
         working-directory: ./app-service
         run: |
+          export JWT_SECRET=secret
           cargo build --verbose
           cargo test --verbose
 

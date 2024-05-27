@@ -23,8 +23,6 @@ impl Password {
     pub fn parse(password: String) -> Result<Password, ValidationError> {
         let is_valid_password = validate_password(&password);
 
-        dbg!(&is_valid_password, &password);
-
         if is_valid_password {
             Ok(Self(password))
         } else {

@@ -1,9 +1,10 @@
 use crate::{
     app_state::AppState,
     domain::{AuthAPIError, Email, Password},
+    utils::auth::generate_auth_cookie,
 };
-use axum::{extract::State, response::IntoResponse, Json};
-use reqwest::StatusCode;
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -19,27 +20,42 @@ pub struct LoginResponse {
 
 pub async fn login(
     State(state): State<AppState>,
+    jar: CookieJar,
     Json(request): Json<LoginRequest>,
-) -> Result<impl IntoResponse, AuthAPIError> {
-    let email = Email::parse(request.email).map_err(|_| AuthAPIError::InvalidCredentials)?;
-    let password =
-        Password::parse(request.password).map_err(|_| AuthAPIError::InvalidCredentials)?;
+) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
+    let email = Email::parse(request.email).ok();
+    let password = Password::parse(request.password).ok();
+
+    if email.is_none() || password.is_none() {
+        return (jar, Err(AuthAPIError::InvalidCredentials));
+    }
+
+    let email = email.unwrap();
+    let password = password.unwrap();
 
     let user_store = state.user_store.read().await;
 
-    user_store
-        .validate_user(&email, &password)
-        .await
-        .map_err(|_| AuthAPIError::IncorrectCredentials)?;
+    let validate_response = user_store.validate_user(&email, &password).await.ok();
 
-    user_store
-        .get_user(&email)
-        .await
-        .map_err(|_| AuthAPIError::IncorrectCredentials)?;
+    let user = user_store.get_user(&email).await.ok();
+
+    if validate_response.is_none() || user.is_none() {
+        return (jar, Err(AuthAPIError::IncorrectCredentials));
+    }
 
     let response = Json(LoginResponse {
         message: "Logged in successfully".to_string(),
     });
 
-    Ok((StatusCode::OK, response))
+    // Ok((StatusCode::OK, response))
+
+    let auth_cookie = generate_auth_cookie(&email);
+
+    if auth_cookie.is_err() {
+        return (jar, Err(AuthAPIError::UnexpectedError));
+    }
+
+    let updated_jar = jar.add(auth_cookie.ok().unwrap());
+
+    (updated_jar, Ok((StatusCode::OK, response)))
 }

@@ -14,6 +14,8 @@ on:
         required: true
       RECAPTCHA_SECRET:
         required: true
+      JWT_SECRET:
+        required: true
   
   workflow_dispatch:
 
@@ -21,6 +23,7 @@ env:
   BASE_PATH: ${{ vars.BASE_PATH }}
   ENVIRONMENT: "remote"
   RECAPTCHA_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
 jobs:
   deployment:
@@ -49,7 +52,7 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{ vars.DROPLET_IP }}
-          envs: BASE_PATH, ENVIRONMENT, RECAPTCHA_SECRET
+          envs: BASE_PATH, ENVIRONMENT, RECAPTCHA_SECRET, JWT_SECRET
 
           username: root
           password: ${{ secrets.DROPLET_PASSWORD }}

@@ -26,6 +26,7 @@ services:
       ENVIRONMENT: remote
       BASE_PATH: ${BASE_PATH}
       RECAPTCHA_SECRET: ${RECAPTCHA_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
   
   reverse-proxy:
     container_name: nginx
