@@ -61,13 +61,13 @@ jobs:
       - name: Build and test app-service code
         working-directory: ./app-service
         run: |
-          export JWT_SECRET=secret
           cargo build --verbose
           cargo test --verbose
 
       - name: Build and test auth-service code
         working-directory: ./auth-service
         run: |
+          export JWT_SECRET=secret
           cargo build --verbose
           cargo test --verbose
 
