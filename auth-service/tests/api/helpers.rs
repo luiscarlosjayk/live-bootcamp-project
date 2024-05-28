@@ -1,7 +1,9 @@
 use auth_service::app_state::AppState;
 use auth_service::domain::path::Paths;
 use auth_service::services::hashmap_user_store::HashmapUserStore;
+use auth_service::utils::constants;
 use auth_service::Application;
+use reqwest::cookie::Jar;
 use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
@@ -10,6 +12,7 @@ use uuid::Uuid;
 pub struct TestApp {
     pub address: String,
     pub http_client: reqwest::Client,
+    pub cookie_jar: Arc<Jar>,
 }
 
 impl TestApp {
@@ -19,14 +22,17 @@ impl TestApp {
          * https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha.-what-should-i-do
          */
         env::set_var(
-            "RECAPTCHA_SECRET",
+            constants::env::RECAPTCHA_SECRET_ENV_VAR,
             "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
         );
+        env::set_var(constants::env::DROPLET_IP_ENV_VAR, "127.0.0.1");
+        env::set_var(constants::env::BASE_PATH_ENV_VAR, "http://localhost");
+
         let user_store = Arc::new(tokio::sync::RwLock::new(HashmapUserStore {
             users: HashMap::default(),
         }));
         let app_state = AppState::new(user_store);
-        let app = Application::build(app_state, "127.0.0.1:0")
+        let app = Application::build(app_state, constants::test::APP_ADDRESS)
             .await
             .expect("Failed to build app");
 
@@ -37,12 +43,17 @@ impl TestApp {
         #[allow(clippy::let_underscore_future)]
         let _ = tokio::spawn(app.run());
 
-        let http_client = reqwest::Client::new(); // Create a Reqwest http client instance
+        let cookie_jar = Arc::new(Jar::default());
+        let http_client = reqwest::Client::builder()
+            .cookie_provider(cookie_jar.clone())
+            .build()
+            .unwrap();
 
         // Create new `TestApp` instance and return it
         Self {
             address,
             http_client,
+            cookie_jar,
         }
     }
 

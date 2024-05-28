@@ -1,15 +1,16 @@
 use app_state::AppState;
 use axum::{
+    http::{Method, StatusCode},
     response::IntoResponse,
     routing::{delete, post},
     serve::Serve,
     Json, Router,
 };
-use domain::AuthAPIError;
-use reqwest::StatusCode;
+use domain::{environment::get_env, AuthAPIError};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use tower_http::services::ServeDir;
+use tower_http::{cors::CorsLayer, services::ServeDir};
+use utils::constants;
 
 pub mod app_state;
 pub mod domain;
@@ -27,9 +28,19 @@ pub struct Application {
 
 impl Application {
     pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
-        // Move the Router definition from `main.rs` to here.
-        // Also, remove the `hello` route.
-        // We don't need it at this point!
+        let droplet_ip = get_env(constants::env::DROPLET_IP_ENV_VAR.to_string());
+        let base_path = get_env(constants::env::BASE_PATH_ENV_VAR.to_string());
+        let allowed_origins = [
+            "http://localhost:8000".parse()?,
+            format!("https://{}:8000", droplet_ip.as_str()).parse()?,
+            format!("{}/app", base_path.as_str()).parse()?,
+        ];
+
+        let cors = CorsLayer::new()
+            .allow_methods([Method::GET, Method::POST])
+            .allow_credentials(true)
+            .allow_origin(allowed_origins);
+
         let router = Router::new()
             .route(domain::path::Paths::Signup.as_str(), post(routes::signup))
             .route(domain::path::Paths::Login.as_str(), post(routes::login))
@@ -47,7 +58,8 @@ impl Application {
                 delete(routes::delete),
             )
             .nest_service(domain::path::Paths::Root.as_str(), ServeDir::new("assets"))
-            .with_state(app_state);
+            .with_state(app_state)
+            .layer(cors);
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let address = listener.local_addr()?.to_string();
@@ -78,6 +90,8 @@ impl IntoResponse for AuthAPIError {
             }
             AuthAPIError::InvalidRecaptcha => (StatusCode::BAD_REQUEST, "Invalid captcha"),
             AuthAPIError::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Unauthorized"),
+            AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing token"),
+            AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid token"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_owned(),

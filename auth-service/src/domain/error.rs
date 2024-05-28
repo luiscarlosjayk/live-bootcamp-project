@@ -4,4 +4,6 @@ pub enum AuthAPIError {
     UnexpectedError,
     InvalidRecaptcha,
     IncorrectCredentials,
+    MissingToken,
+    InvalidToken,
 }

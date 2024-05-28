@@ -13,5 +13,5 @@ pub fn is_remote() -> bool {
 }
 
 pub fn get_env(env_name: String) -> String {
-    env::var(env_name).expect("Missing {env_name} environment variable.")
+    env::var(&env_name).unwrap_or_else(|_| panic!("Missing {} environment variable.", env_name))
 }
