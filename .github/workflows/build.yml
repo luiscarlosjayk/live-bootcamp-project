@@ -20,6 +20,8 @@ env:
   BASE_PATH: "${{ vars.BASE_PATH }}"
   ENVIRONMENT: "remote"
   RECAPTCHA_SECRET: "${{ secrets.RECAPTCHA_SECRET }}"
+  JWT_SECRET: "${{ secrets.JWT_SECRET }}"
+  DROPLET_IP: "${{ vars.DROPLET_IP }}"
 
 jobs:
   deploy:
