@@ -1,7 +1,10 @@
 use crate::helpers::{get_random_email, TestApp};
-use auth_service::utils::{
-    auth::{Claims, TOKEN_TTL_SECONDS},
-    constants::{JWT_COOKIE_NAME, JWT_SECRET},
+use auth_service::{
+    domain::environment::get_env,
+    utils::{
+        auth::{Claims, TOKEN_TTL_SECONDS},
+        constants::{env::JWT_SECRET_ENV_VAR, JWT_COOKIE_NAME},
+    },
 };
 use chrono::Utc;
 use jsonwebtoken::{encode, EncodingKey, Header};
@@ -45,10 +48,11 @@ async fn logout_should_return_200_if_valid_jwt_cookie() {
             .expect("valid timestamp")
             .timestamp() as usize,
     };
+    let jwt_secret = get_env(JWT_SECRET_ENV_VAR.to_string());
     let token = encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(JWT_SECRET.as_bytes()),
+        &EncodingKey::from_secret(jwt_secret.as_bytes()),
     )
     .expect("Failed to encode JWT");
 
@@ -77,10 +81,11 @@ async fn logout_should_return_400_if_logout_called_twice_in_a_row() {
             .expect("valid timestamp")
             .timestamp() as usize,
     };
+    let jwt_secret = get_env(JWT_SECRET_ENV_VAR.to_string());
     let token = encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(JWT_SECRET.as_bytes()),
+        &EncodingKey::from_secret(jwt_secret.as_bytes()),
     )
     .expect("Failed to encode JWT");
 

@@ -1,5 +1,5 @@
-use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
-use crate::domain::email::Email;
+use super::constants::{env::JWT_SECRET_ENV_VAR, JWT_COOKIE_NAME};
+use crate::domain::{email::Email, environment::get_env};
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Validation};
@@ -62,9 +62,10 @@ fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
 
 // Check if JWT auth token is valid by decoding it using the JWT secret
 pub async fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+    let jwt_secret = get_env(JWT_SECRET_ENV_VAR.to_string());
     decode::<Claims>(
         token,
-        &DecodingKey::from_secret(JWT_SECRET.as_bytes()),
+        &DecodingKey::from_secret(jwt_secret.as_bytes()),
         &Validation::default(),
     )
     .map(|data| data.claims)
@@ -72,10 +73,11 @@ pub async fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors:
 
 // Create JWT auth token by encoding claims using the JWT secret
 fn create_token(claims: &Claims) -> Result<String, jsonwebtoken::errors::Error> {
+    let jwt_secret = get_env(JWT_SECRET_ENV_VAR.to_string());
     encode(
         &jsonwebtoken::Header::default(),
         &claims,
-        &EncodingKey::from_secret(JWT_SECRET.as_bytes()),
+        &EncodingKey::from_secret(jwt_secret.as_bytes()),
     )
 }
 
