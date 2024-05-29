@@ -38,7 +38,7 @@ fn create_auth_cookie(token: String) -> Cookie<'static> {
 }
 
 // Create JWT auth token
-fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
+pub fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
     let delta = chrono::Duration::try_seconds(TOKEN_TTL_SECONDS)
         .ok_or(GenerateTokenError::UnexpectedError)?;
 
@@ -62,7 +62,7 @@ fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
 
 // Check if JWT auth token is valid by decoding it using the JWT secret
 pub async fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
-    let jwt_secret = get_env(JWT_SECRET_ENV_VAR.to_string());
+    let jwt_secret = get_env(JWT_SECRET_ENV_VAR);
     decode::<Claims>(
         token,
         &DecodingKey::from_secret(jwt_secret.as_bytes()),
@@ -73,7 +73,7 @@ pub async fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors:
 
 // Create JWT auth token by encoding claims using the JWT secret
 fn create_token(claims: &Claims) -> Result<String, jsonwebtoken::errors::Error> {
-    let jwt_secret = get_env(JWT_SECRET_ENV_VAR.to_string());
+    let jwt_secret = get_env(JWT_SECRET_ENV_VAR);
     encode(
         &jsonwebtoken::Header::default(),
         &claims,
@@ -83,10 +83,13 @@ fn create_token(claims: &Claims) -> Result<String, jsonwebtoken::errors::Error> 
 
 #[cfg(test)]
 mod tests {
+    use std::env;
+
     use super::*;
 
     #[tokio::test]
     async fn test_generate_auth_cookie() {
+        env::set_var(JWT_SECRET_ENV_VAR, "test");
         let email = Email::parse("test@example.com".to_owned()).unwrap();
         let cookie = generate_auth_cookie(&email).unwrap();
         assert_eq!(cookie.name(), JWT_COOKIE_NAME);
@@ -109,6 +112,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_auth_token() {
+        env::set_var(JWT_SECRET_ENV_VAR, "test");
         let email = Email::parse("test@example.com".to_owned()).unwrap();
         let result = generate_auth_token(&email).unwrap();
         assert_eq!(result.split('.').count(), 3);
@@ -116,6 +120,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_validate_token_with_valid_token() {
+        env::set_var(JWT_SECRET_ENV_VAR, "test");
         let email = Email::parse("test@example.com".to_owned()).unwrap();
         let token = generate_auth_token(&email).unwrap();
         let result = validate_token(&token).await.unwrap();

@@ -28,8 +28,8 @@ pub struct Application {
 
 impl Application {
     pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
-        let droplet_ip = get_env(constants::env::DROPLET_IP_ENV_VAR.to_string());
-        let base_path = get_env(constants::env::BASE_PATH_ENV_VAR.to_string());
+        let droplet_ip = get_env(constants::env::DROPLET_IP_ENV_VAR);
+        let base_path = get_env(constants::env::BASE_PATH_ENV_VAR);
         let allowed_origins = [
             "http://localhost:8000".parse()?,
             format!("https://{}:8000", droplet_ip.as_str()).parse()?,

@@ -48,7 +48,7 @@ async fn logout_should_return_200_if_valid_jwt_cookie() {
             .expect("valid timestamp")
             .timestamp() as usize,
     };
-    let jwt_secret = get_env(JWT_SECRET_ENV_VAR.to_string());
+    let jwt_secret = get_env(JWT_SECRET_ENV_VAR);
     let token = encode(
         &Header::default(),
         &claims,

@@ -47,8 +47,6 @@ pub async fn login(
         message: "Logged in successfully".to_string(),
     });
 
-    // Ok((StatusCode::OK, response))
-
     let auth_cookie = generate_auth_cookie(&email);
 
     if auth_cookie.is_err() {

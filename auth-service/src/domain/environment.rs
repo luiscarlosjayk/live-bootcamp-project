@@ -12,6 +12,11 @@ pub fn is_remote() -> bool {
     environment == *"remote"
 }
 
-pub fn get_env(env_name: String) -> String {
-    env::var(&env_name).unwrap_or_else(|_| panic!("Missing {} environment variable.", env_name))
+pub fn get_env<Env>(env_name: Env) -> String
+where
+    Env: Into<String>,
+{
+    let env_name = env_name.into();
+    env::var(&env_name)
+        .unwrap_or_else(|_| panic!("{}", format!("Missing {} environment variable.", &env_name)))
 }

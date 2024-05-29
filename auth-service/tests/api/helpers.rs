@@ -26,6 +26,7 @@ impl TestApp {
             "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
         );
         env::set_var(constants::env::DROPLET_IP_ENV_VAR, "127.0.0.1");
+        env::set_var(constants::env::JWT_SECRET_ENV_VAR, "foobar");
         env::set_var(constants::env::BASE_PATH_ENV_VAR, "http://localhost");
 
         let user_store = Arc::new(tokio::sync::RwLock::new(HashmapUserStore {
@@ -105,9 +106,13 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub async fn post_verify_token(&self) -> reqwest::Response {
+    pub async fn post_verify_token<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
         self.http_client
             .post(&format!("{}{}", &self.address, Paths::VerifyToken.as_str()))
+            .json(body)
             .send()
             .await
             .expect("Failed to execute request.")

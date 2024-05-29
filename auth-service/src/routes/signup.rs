@@ -1,6 +1,7 @@
 use crate::{
     app_state::AppState,
     domain::{environment::get_env, AuthAPIError, Email, Password, User},
+    utils::constants::env::RECAPTCHA_SECRET_ENV_VAR,
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
@@ -32,7 +33,7 @@ pub struct SignupRequest {
 }
 
 async fn validate_recaptcha(token: String) -> bool {
-    let recaptcha_secret = get_env("RECAPTCHA_SECRET".to_string());
+    let recaptcha_secret = get_env(RECAPTCHA_SECRET_ENV_VAR);
     let mut params = HashMap::new();
     let mut headers = reqwest::header::HeaderMap::new();
 
