@@ -1,14 +1,15 @@
-use axum::{http::StatusCode, response::IntoResponse};
+use crate::{
+    app_state::AppState,
+    domain::AuthAPIError,
+    utils::{auth, constants::JWT_COOKIE_NAME},
+};
+use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use axum_extra::extract::CookieJar;
 
-use crate::{
-    domain::AuthAPIError,
-    utils::{auth::validate_token, constants::JWT_COOKIE_NAME},
-};
-
-pub async fn logout(jar: CookieJar) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
-    // Retrieve JWT cookie from the `CookieJar`
-    // Return AuthAPIError::MissingToken is the cookie is not found
+pub async fn logout(
+    jar: CookieJar,
+    State(state): State<AppState>,
+) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
     let cookie = jar.get(JWT_COOKIE_NAME);
 
     if cookie.is_none() {
@@ -17,18 +18,24 @@ pub async fn logout(jar: CookieJar) -> (CookieJar, Result<impl IntoResponse, Aut
 
     let cookie = cookie.unwrap(); // @todo: Compare with teacher's codebase if there's an easier way to extract this without unwrap
     let token = cookie.value().to_string();
+    let banned_token_store = state.banned_token_store.clone();
 
-    // TODO: Validate JWT token by calling `validate_token` from the auth service.
-    // If the token is valid you can ignore the returned claims for now.
-    // Return AuthAPIError::InvalidToken is validation fails.
-    let validate_token_response = validate_token(&token).await;
+    let response = auth::validate_token(&token, banned_token_store).await;
 
-    if let Err(_err) = validate_token_response {
+    if let Err(_err) = response {
         return (jar, Err(AuthAPIError::InvalidToken));
     }
 
     // Removes cookie
     let jar = jar.remove(axum_extra::extract::cookie::Cookie::from(JWT_COOKIE_NAME));
+
+    // Add token to banned token store
+    let mut banned_token_store = state.banned_token_store.write().await;
+    let response = banned_token_store.add_token(token).await;
+
+    if response.is_err() {
+        return (jar, Err(AuthAPIError::UnexpectedError));
+    }
 
     (jar, Ok(StatusCode::OK))
 }

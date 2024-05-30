@@ -1,19 +1,15 @@
-use async_trait::async_trait;
-use std::collections::HashMap;
-
 use crate::domain::{
     data_stores::{UserStore, UserStoreError},
     Email, Password, User,
 };
+use async_trait::async_trait;
+use std::collections::HashMap;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct HashmapUserStore {
     pub users: HashMap<Email, User>,
 }
 
-// DONE: Create a new struct called `HashmapUserStore` containing a `users` field
-// which stores a `HashMap`` of email `String`s mapped to `User` objects.
-// Derive the `Default` trait for `HashmapUserStore`.
 #[async_trait]
 impl UserStore for HashmapUserStore {
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
@@ -34,11 +30,6 @@ impl UserStore for HashmapUserStore {
         Err(UserStoreError::UserNotFound)
     }
 
-    // DONE: Implement a public method called `get_user`, which takes an
-    // immutable reference to self and an email string slice as arguments.
-    // This function should return a `Result` type containing either a
-    // `User` object or a `UserStoreError`.
-    // Return `UserStoreError::UserNotFound` if the user can not be found.
     async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
         match self.users.get(email) {
             Some(user) => Ok(user.clone()),
@@ -46,12 +37,6 @@ impl UserStore for HashmapUserStore {
         }
     }
 
-    // DONE: Implement a public method called `validate_user`, which takes an
-    // immutable reference to self, an email string slice, and a password string slice
-    // as arguments. `validate_user` should return a `Result` type containing either a
-    // unit type `()` if the email/password passed in matches an existing user, or a `UserStoreError`.
-    // Return `UserStoreError::UserNotFound` if the user can not be found.
-    // Return `UserStoreError::InvalidCredentials` if the password is incorrect.
     async fn validate_user(
         &self,
         email: &Email,
@@ -70,7 +55,6 @@ impl UserStore for HashmapUserStore {
     }
 }
 
-// DONE: Add unit tests for your `HashmapUserStore` implementation
 #[cfg(test)]
 mod tests {
     use super::*;

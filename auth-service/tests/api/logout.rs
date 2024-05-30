@@ -1,6 +1,6 @@
 use crate::helpers::{get_random_email, TestApp};
 use auth_service::{
-    domain::environment::get_env,
+    domain::{data_stores::BannedTokenStoreError, environment::get_env},
     utils::{
         auth::{Claims, TOKEN_TTL_SECONDS},
         constants::{env::JWT_SECRET_ENV_VAR, JWT_COOKIE_NAME},
@@ -22,7 +22,7 @@ async fn logout_should_return_400_if_jwt_cookie_missing() {
 async fn logout_should_return_401_if_invalid_jwt() {
     let app = TestApp::new().await;
 
-    // add invalid cookie
+    // Add invalid cookie
     app.cookie_jar.add_cookie_str(
         &format!(
             "{}=invalid; HttpOnly; SameSite=Lax; Secure; Path=/",
@@ -66,6 +66,12 @@ async fn logout_should_return_200_if_valid_jwt_cookie() {
 
     let response = app.post_logout().await;
     assert_eq!(response.status().as_u16(), 200);
+
+    // Verify the token was added to the banned_tokens_store
+    let banned_token_store = app.banned_token_store.read().await;
+    let response = banned_token_store.validate_token(token).await;
+
+    assert_eq!(response, Err(BannedTokenStoreError::InvalidToken));
 }
 
 #[tokio::test]
