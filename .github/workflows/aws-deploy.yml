@@ -5,8 +5,9 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_ACCOUNT: ${{ secrets.AWS_ACCOUNT }}
+  AWS_REGION: "${{ vars.AWS_REGION }}"
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
+  AWS_GITHUB_ACTIONS_ROLE: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -32,17 +33,17 @@ jobs:
           cd cdk
           npm run build::lambda
 
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          path: cdk/src/lambda
-          retention-days: 1
-
-      # - name: Configure AWS credentials
-      #   uses: aws-actions/configure-aws-credentials@v4
+      # - uses: actions/upload-artifact@v4
+      #   if: always()
       #   with:
-      #     role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT }}:role/GitHub-CICD-Role
-      #     aws-region: us-east-1
+      #     path: cdk/src/lambda
+      #     retention-days: 1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_GITHUB_ACTIONS_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
 
       # - name: CDK Deploy
       #   run: |

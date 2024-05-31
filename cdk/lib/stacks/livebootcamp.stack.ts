@@ -12,25 +12,13 @@ export class LiveBootCampStack extends cdk.Stack {
 
     const s3Bucket = new s3.Bucket(this, 'LiveBootCampBucket', {});
     
-    const cloudfrontKeyValueStore = new cloudfront.KeyValueStore(this, 'LiveBootCampKeyValueStoreAsset', {
-      source: cloudfront.ImportSource.fromInline(JSON.stringify({
-        data: [
-          {
-            key: 'JWT_SECRET',
-            value: process.env.JWT_SECRET,
-          },
-        ],
-      })),
-    });
-
     const jwtValidatorFunction = new cloudfront.Function(this, 'LiveBootCampJWTValidator', {
       code: cloudfront.FunctionCode.fromFile({
         // filePath: 'src/lambda/jwt-validator.js',
-        filePath: 'src/lambda/dummy.js',
+        filePath: './src/lambda/dummy.js',
       }),
       runtime: cloudfront.FunctionRuntime.JS_2_0,
       autoPublish: true, // Automatically publish the function to the LIVE stage when it’s created.
-      keyValueStore: cloudfrontKeyValueStore,
     });
 
     const cloudfrontDistribution = new cloudfront.Distribution(this, 'LiveBootCampDistribution', {
