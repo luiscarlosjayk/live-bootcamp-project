@@ -9,8 +9,8 @@
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
-    "build::lambda": "node esbuild.config.mjs",
-    "clean::lambda": "rm src/lambda/*.js"
+    "lambda::build": "node esbuild.config.mjs",
+    "lambda::clean": "rm src/lambda/*.js"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
