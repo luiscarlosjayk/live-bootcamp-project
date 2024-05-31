@@ -4,6 +4,10 @@ on:
   workflow_call:
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
   AWS_REGION: "${{ vars.AWS_REGION }}"
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
