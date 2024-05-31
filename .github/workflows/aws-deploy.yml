@@ -35,7 +35,7 @@ jobs:
       - name: Transpile Lambda functions to Javascript
         run: |
           cd cdk
-          npm run build::lambda
+          npm run lambda::build
 
       # - uses: actions/upload-artifact@v4
       #   if: always()
