@@ -45,6 +45,6 @@ jobs:
           role-to-assume: ${{ env.AWS_GITHUB_ACTIONS_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # - name: CDK Deploy
-      #   run: |
-      #     cd cdk && npx cdk deploy --require-approval never --ci
+      - name: CDK Deploy
+        run: |
+          cd cdk && npx cdk deploy --require-approval never --ci
