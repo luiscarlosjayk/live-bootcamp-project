@@ -36,7 +36,7 @@ jobs:
         if: always()
         with:
           name: lambdas
-          path: src/lambda/
+          path: src
           retention-days: 1
 
       # - name: Configure AWS credentials
