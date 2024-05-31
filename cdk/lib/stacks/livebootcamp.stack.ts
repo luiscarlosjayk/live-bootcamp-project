@@ -64,9 +64,9 @@ export class LiveBootCampStack extends cdk.Stack {
     const cloudfrontDistribution = new cloudfront.Distribution(this, 'LiveBootCampDistribution', {
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100, // I'm not rich 💰 yet
       // certificate: certificate,
-      domainNames: [
-        FULL_DOMAIN
-      ],
+      // domainNames: [
+      //   FULL_DOMAIN
+      // ],
       logBucket: s3LogBucket,
       enableLogging: true,
       defaultBehavior: {
@@ -105,7 +105,7 @@ export class LiveBootCampStack extends cdk.Stack {
 
 
     // new route53.ARecord(this, 'LiveBootCampARecord', {
-    //   recordName: FULL_DOMAIN,
+    //   recordName: SUB_DOMAIN,
     //   zone: hostedZone,
     //   target: route53.RecordTarget.fromAlias(new route53Targets.CloudFrontTarget(cloudfrontDistribution)),
     // });
