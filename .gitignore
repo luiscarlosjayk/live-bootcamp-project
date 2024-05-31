@@ -7,5 +7,15 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 .env
+
 # OS
 .DS_Store
+
+# AWS CDK
+cdk/node_modules
+cdk/**/*.js
+!cdk/esbuild.config.js
+!cdk/jest.config.js
+cdk/**/*.d.ts
+cdk/.cdk.staging
+cdk/cdk.out

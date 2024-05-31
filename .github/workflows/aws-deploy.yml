@@ -1,0 +1,50 @@
+name: LiveBootCamp AWS Deploy
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  AWS_ACCOUNT: ${{ secrets.AWS_ACCOUNT }}
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  deployment:
+    name: AWS Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Node dependencies
+        run: cd cdk && npm ci --ignore-scripts
+
+      - name: Transpile Lambda functions to Javascript
+        run: |
+          cd cdk
+          npm run build::lambda
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lambdas
+          path: src/lambda/
+          retention-days: 1
+
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT }}:role/GitHub-CICD-Role
+      #     aws-region: us-east-1
+
+      # - name: CDK Deploy
+      #   run: |
+      #     cd cdk && npx cdk deploy --require-approval never --ci
