@@ -7,6 +7,9 @@ import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as certificates from 'aws-cdk-lib/aws-certificatemanager';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as logs from 'aws-cdk-lib/aws-logs';
+import path from 'path';
 
 export interface LiveBootCampStackProps extends cdk.StackProps {};
 
@@ -21,52 +24,58 @@ export class LiveBootCampStack extends cdk.Stack {
     /**
      * Route 53 & ACM
      */
-    // const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-    //   domainName: DOMAIN_NAME,
-    // });
+    const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
+      domainName: DOMAIN_NAME,
+    });
 
-    // const certificate = new certificates.Certificate(this, 'LiveBootCampCertificate', {
-    //   domainName: FULL_DOMAIN,
-    //   validation: certificates.CertificateValidation.fromDns(hostedZone),
-    // });
+    const certificate = new certificates.Certificate(this, 'ACMCertificate', {
+      domainName: FULL_DOMAIN,
+      validation: certificates.CertificateValidation.fromDns(hostedZone),
+    });
 
     /**
      * S3 & CloudFront
      */
-    const s3Bucket = new s3.Bucket(this, 'LiveBootCampBucket', {
+    const s3Bucket = new s3.Bucket(this, 'S3Bucket', {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
-      autoDeleteObjects: true,
-      // accessControl: s3.BucketAccessControl.PRIVATE,
+      accessControl: s3.BucketAccessControl.PRIVATE,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      publicReadAccess: false,
+      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
+    });
+    const s3LogBucket = new s3.Bucket(this, 'LogLiveRustBootCampBucket', {
+      objectOwnership: s3.ObjectOwnership.OBJECT_WRITER,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       publicReadAccess: false,
     });
-    const s3LogBucket = new s3.Bucket(this, 'LiveBootCampLogBucket', {
-      objectOwnership: s3.ObjectOwnership.OBJECT_WRITER,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      autoDeleteObjects: true,
-      // accessControl: s3.BucketAccessControl.PRIVATE,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      publicReadAccess: false,
+
+    // Create a Origun Access Control List (OACL)
+    const oac = new cloudfront.CfnOriginAccessControl(this, 'OACL', {
+      originAccessControlConfig: {
+        name: 'LiveRustBootCampOACL',
+        originAccessControlOriginType: 's3',
+        signingBehavior: 'always',
+        signingProtocol: 'sigv4',
+      },
     });
 
     /**
      * CloudFront
      */
-    const jwtValidatorFunction = new cloudfront.Function(this, 'LiveBootCampJWTValidator', {
-      code: cloudfront.FunctionCode.fromFile({
-        // filePath: 'src/lambda/jwt-validator.js',
-        filePath: './src/lambda/dummy.js',
-      }),
-      runtime: cloudfront.FunctionRuntime.JS_2_0,
-      autoPublish: true, // Automatically publish the function to the LIVE stage when it’s created.
+    const lambdaEdgeFn = new cloudfront.experimental.EdgeFunction(this, 'LambdaEdge', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'jwt-protection.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../src/lambda')),
     });
+    const lambdaEdgeFnVersion = lambdaEdgeFn.currentVersion;
 
-    const cloudfrontDistribution = new cloudfront.Distribution(this, 'LiveBootCampDistribution', {
+    const cloudfrontDistribution = new cloudfront.Distribution(this, 'Distribution', {
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100, // I'm not rich 💰 yet
-      // certificate: certificate,
-      // domainNames: [
-      //   FULL_DOMAIN
-      // ],
+      certificate: certificate,
+      domainNames: [
+        FULL_DOMAIN
+      ],
       logBucket: s3LogBucket,
       enableLogging: true,
       defaultBehavior: {
@@ -75,15 +84,14 @@ export class LiveBootCampStack extends cdk.Stack {
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
         cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD,
         compress: true,
-        originRequestPolicy: new cloudfront.OriginRequestPolicy(this, 'OriginRequestPolicy', {
-          cookieBehavior: cloudfront.OriginRequestCookieBehavior.all(),
-          headerBehavior: cloudfront.OriginRequestHeaderBehavior.all(),
-          queryStringBehavior: cloudfront.OriginRequestQueryStringBehavior.all()
-        }),
-        functionAssociations: [{
-          function: jwtValidatorFunction,
-          eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
-        }],
+        originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        edgeLambdas: [
+          {
+            functionVersion: lambdaEdgeFnVersion,
+            eventType: cloudfront.LambdaEdgeEventType.VIEWER_REQUEST,
+            includeBody: true,
+          }
+        ],
       }
     });
 
@@ -92,37 +100,20 @@ export class LiveBootCampStack extends cdk.Stack {
       actions: ['s3:GetObject'],
       effect: iam.Effect.ALLOW,
       resources: [s3Bucket.arnForObjects('*')],
-      // principals: [new iam.CanonicalUserPrincipal(cloudfrontDistribution.distributionDomainName)],
       principals: [
         new iam.ServicePrincipal('cloudfront.amazonaws.com'),
       ],
       conditions: {
         StringEquals: {
-          'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${cloudfrontDistribution.distributionId}`
-        }
+          'AWS:SourceArn': `arn:aws:cloudfront::${this.account}:distribution/${cloudfrontDistribution.distributionId}`,
+        },
       },
     }));
 
-
-    // new route53.ARecord(this, 'LiveBootCampARecord', {
-    //   recordName: SUB_DOMAIN,
-    //   zone: hostedZone,
-    //   target: route53.RecordTarget.fromAlias(new route53Targets.CloudFrontTarget(cloudfrontDistribution)),
-    // });
-
-    /**
-     * Stack Outputs
-     */
-    new cdk.CfnOutput(this, 'LiveBootCampURL', {
-      value: cloudfrontDistribution.distributionDomainName,
-    });
-
-    new cdk.CfnOutput(this, 'S3 Bucket', {
-      value: s3Bucket.bucketName,
-    });
-
-    new cdk.CfnOutput(this, 'JWT Validator Function', {
-      value: jwtValidatorFunction.functionName,
+    new route53.ARecord(this, 'Route53ARecord', {
+      recordName: SUB_DOMAIN,
+      zone: hostedZone,
+      target: route53.RecordTarget.fromAlias(new route53Targets.CloudFrontTarget(cloudfrontDistribution)),
     });
 
   }

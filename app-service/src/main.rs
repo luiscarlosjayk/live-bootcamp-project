@@ -32,7 +32,7 @@ struct IndexTemplate {
 }
 
 async fn root() -> impl IntoResponse {
-    let mut address = env::var("BASE_PATH").unwrap_or("localhost".to_owned());
+    let mut address = env::var("BASE_PATH").unwrap_or("http://localhost".to_owned());
     if address.is_empty() {
         "http://localhost".clone_into(&mut address);
     }
@@ -75,7 +75,11 @@ async fn protected(jar: CookieJar) -> impl IntoResponse {
             StatusCode::UNAUTHORIZED.into_response()
         }
         reqwest::StatusCode::OK => Json(ProtectedRouteResponse {
-            img_url: "https://i.ibb.co/YP90j68/Light-Live-Bootcamp-Certificate.png".to_owned(),
+            img_url: format!(
+                "https://livebootcamp.cdn.luiscarlosjayk.com/certificate.png?token={}",
+                &jwt_cookie.value()
+            ),
+            // img_url: "https://i.ibb.co/YP90j68/Light-Live-Bootcamp-Certificate.png".to_owned(),
         })
         .into_response(),
         _ => StatusCode::INTERNAL_SERVER_ERROR.into_response(),

@@ -1,87 +1,78 @@
-import type { Context, CloudFrontFunctionsEvent, CloudFrontResultResponse } from 'aws-lambda';
+import type { Context, CloudFrontResponseEvent, Callback } from 'aws-lambda';
 import * as jwt from 'jsonwebtoken';
 
-type HandlerResponse = CloudFrontFunctionsEvent['request'] | CloudFrontFunctionsEvent['response'];
+const JWT_SECRET = process.env.JWT_SECRET;
 
-const JWT_SECRET = process.env?.JWT_SECRET;
-const JWT_HEADER_NAME = process.env?.JWT_HEADER_NAME ?? 'jwt';
+function verifyToken(token: string, secret: string) {
+    return jwt.verify(token, secret);
+}
 
-export async function handler(event: CloudFrontFunctionsEvent, _context: Context): Promise<HandlerResponse> {
-    const request = event.request;
-    const cookies = request.cookies;
+export function handler(event: CloudFrontResponseEvent, _context: Context, callback: Callback) {
+    const request = event.Records[0].cf.request;
 
-    // Verify JWT_SECRET is set
-    if (typeof JWT_SECRET !== 'string' || JWT_SECRET.length === 0) {
-        console.error('JWT_SECRET is undefined or empty');
-        return generateInternalServerErrorResponse();
+    console.log(JSON.stringify(request, null, 2));
+
+    if (typeof JWT_SECRET !== 'string') {
+        console.log('Missing JWT_SECRET env');
+        console.info(response500);
+        return callback(null, response500);
     }
 
-    // Verify JWT_HEADER_NAME is set
-    if (typeof JWT_HEADER_NAME !== 'string' || JWT_HEADER_NAME.length === 0) {
-        console.error('JWT_HEADER_NAME is undefined or empty');
-        return generateInternalServerErrorResponse();
-    }
-
-    // Verify the request is a GET request
-    if (request.method !== 'GET') {
-        return generateErrorResponse();
-    }
-
-    // // Verify the request is for the protected resource
-    // if (request.uri! == '/protected') {
-    //     return generateErrorResponse();
+    // if (request.uri !== '/certificate.png') {
+    //     callback(null, notFoundErrorResponse());
+    //     return;
     // }
 
+    const querystring = request.querystring;
+    const queryParams = <{ [key: string]: string; }>{};
+
+    if (querystring) {
+        querystring.split('&').forEach(param => {
+            const [key, value] = param.split('=');
+            queryParams[key] = value;
+        });
+    }
+    const token = queryParams['token'];
+    console.debug(`token: ${token}`);
+
+    if (!token) {
+        console.error('Missing token param');
+        console.info(response500);
+        return callback(null, response500);
+    }
+
     try {
-        // Verify jwt cookie
-        if (!cookies || (JWT_HEADER_NAME in cookies)) {
-            return generateErrorResponse();
-        }
+        const decoded = verifyToken(token, JWT_SECRET);
+        print(decoded);
+    } catch (error) {
+        console.error(`Invalid token: ${token}`);
+        console.info(response401);
+        return callback(null, response401);
+    }
 
-        const jwtCookie = cookies[JWT_HEADER_NAME];
-        const token = jwtCookie.value;
+    console.info('Success');
+    callback(null, request); // Let it pass 👑
+}
 
-        if (!token) {
-            return generateErrorResponse();
-        }
-
-        // Verify the token using the secret
-        jwt.verify(token, JWT_SECRET);
-
-        // Token is valid, allow the request to proceed
-        return request;
-    } catch (err) {
-        // Check if error is due to invalid token
-        if (err instanceof jwt.JsonWebTokenError) {
-            return generateErrorResponse();
-        }
-        // For other types of errors, return a 500 response
-        return generateInternalServerErrorResponse();
+function print(data: string | Record<string, any>): void {
+    if (typeof data === 'string') {
+        console.log(data);
+    } else {
+        console.log(JSON.stringify({ data }));
     }
 }
 
-function generateErrorResponse(): CloudFrontFunctionsEvent['response'] {
-    return {
-        statusCode: 401,
-        statusDescription: 'Unauthorized',
-        headers: {
-            'www-authenticate': {
-                value: 'Bearer realm="LiveBootcampAPI", error="invalid_token", error_description="The id token is invalid or expired.'
-            },
-        },
-        cookies: {},
-    };
-}
+const response401 = {
+    status: "401",
+    statusDescription: "Unauthorized",
+};
 
-function generateInternalServerErrorResponse(): CloudFrontFunctionsEvent['response'] {
-    return {
-        statusCode: 500,
-        statusDescription: 'Internal Server Error',
-        headers: {
-            'content-type': {
-                value: 'plain/text',
-            },
-        },
-        cookies: {},
-    };
-}
+const response404 = {
+    status: "404",
+    statusDescription: "Not Found",
+};
+
+const response500 = {
+    status: 500,
+    statusDescription: 'Internal Server Error',
+};

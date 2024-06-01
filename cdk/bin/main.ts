@@ -11,14 +11,14 @@ if (!AWS_ACCOUNT || !AWS_REGION) {
 }
 
 const app = new cdk.App();
-new LiveBootCampStack(app, 'LiveBootCampStack', {
-  stackName: 'livebootcamp-stack',
+new LiveBootCampStack(app, 'LiveRustBootCampStack', {
+  stackName: 'liverustbootcamp',
   env: {
     account: AWS_ACCOUNT,
     region: AWS_REGION,
   },
   tags: {
-    OWNER: 'Luis Carlos Osorio Jayk',
+    OWNER: 'LuisCarlosOsorioJayk',
     team: 'LiveBootCamp',
     application: 'LiveBootCamp',
   },
