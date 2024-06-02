@@ -10,7 +10,7 @@ export interface S3OACOriginProps extends cloudfront.OriginProps {
 
 export interface S3OACOriginBindConfig extends cloudfront.OriginBindConfig {
     originProperty: cloudfront.OriginBindConfig['originProperty'] & {
-        originAccessControlId?: string; //cloudfront.CfnDistribution.OriginProperty['originAccessControlId'];
+        originAccessControlId: cloudfront.CfnDistribution.OriginProperty['originAccessControlId'];
     }
 }
 
