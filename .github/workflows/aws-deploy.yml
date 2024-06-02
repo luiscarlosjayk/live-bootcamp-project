@@ -10,6 +10,8 @@ permissions:
 
 env:
   AWS_REGION: "${{ vars.AWS_REGION }}"
+  DOMAIN_NAME: "${{ vars.DOMAIN_NAME }}"
+  SUB_DOMAIN: "${{ vars.SUB_DOMAIN }}"
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
   AWS_GITHUB_ACTIONS_ROLE: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE }}
 
