@@ -1,9 +1,9 @@
 use auth_service::{
-    app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType},
+    app_state::{AppState, BannedTokenStoreType, EmailClientType, TwoFACodeStoreType},
     domain::path::Paths,
     services::{
         hashmap_two_fa_code_store::HashmapTwoFACodeStore, hashmap_user_store::HashmapUserStore,
-        hashset_banned_token_store::HashsetBannedTokenStore,
+        hashset_banned_token_store::HashsetBannedTokenStore, mock_email_client::MockEmailClient,
     },
     utils::constants::{self, test},
     Application,
@@ -18,6 +18,7 @@ pub struct TestApp {
     pub banned_token_store: BannedTokenStoreType,
     pub http_client: reqwest::Client,
     pub two_fa_code_store: TwoFACodeStoreType,
+    pub email_client: EmailClientType,
 }
 
 impl TestApp {
@@ -39,10 +40,13 @@ impl TestApp {
             Arc::new(tokio::sync::RwLock::new(HashsetBannedTokenStore::default()));
         let two_fa_code_store =
             Arc::new(tokio::sync::RwLock::new(HashmapTwoFACodeStore::default()));
+        let email_client = Arc::new(MockEmailClient);
+
         let app_state = AppState::new(
             user_store,
             banned_token_store.clone(),
             two_fa_code_store.clone(),
+            email_client.clone(),
         );
 
         let app = Application::build(app_state, test::APP_ADDRESS)
@@ -66,6 +70,7 @@ impl TestApp {
             banned_token_store,
             http_client,
             two_fa_code_store,
+            email_client,
         }
     }
 

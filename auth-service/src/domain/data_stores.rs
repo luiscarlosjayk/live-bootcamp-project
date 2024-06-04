@@ -100,6 +100,12 @@ impl TwoFACode {
     }
 }
 
+impl std::fmt::Display for TwoFACode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl Default for TwoFACode {
     fn default() -> Self {
         let mut rng = rand::thread_rng();
