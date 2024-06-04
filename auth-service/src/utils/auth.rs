@@ -1,7 +1,7 @@
 use super::constants::{env::JWT_SECRET_ENV_VAR, JWT_COOKIE_NAME};
 use crate::{
     app_state::BannedTokenStoreType,
-    domain::{data_stores::BannedTokenStoreError, email::Email, environment::get_env},
+    domain::{email::Email, environment::get_env},
 };
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::{Duration, Utc};
@@ -66,24 +66,29 @@ pub fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> 
 pub async fn validate_token(
     token: &str,
     banned_token_store: BannedTokenStoreType,
-) -> Result<Claims, BannedTokenStoreError> {
-    banned_token_store
-        .read()
-        .await
-        .validate_token(token.to_string())
-        .await
-        .map_err(|_| BannedTokenStoreError::InvalidToken)?;
+) -> Result<Claims, jsonwebtoken::errors::Error> {
+    match banned_token_store.read().await.contains_token(token).await {
+        Ok(value) => {
+            if value {
+                return Err(jsonwebtoken::errors::Error::from(
+                    jsonwebtoken::errors::ErrorKind::InvalidToken,
+                ));
+            }
+        }
+        Err(_) => {
+            return Err(jsonwebtoken::errors::Error::from(
+                jsonwebtoken::errors::ErrorKind::InvalidToken,
+            ));
+        }
+    }
 
     let jwt_secret = get_env(JWT_SECRET_ENV_VAR);
-    let claims = decode::<Claims>(
+    decode::<Claims>(
         token,
         &DecodingKey::from_secret(jwt_secret.as_bytes()),
         &Validation::default(),
     )
     .map(|data| data.claims)
-    .map_err(|_| BannedTokenStoreError::InvalidToken)?;
-
-    Ok(claims)
 }
 
 // Create JWT auth token by encoding claims using the JWT secret
@@ -98,8 +103,11 @@ pub fn create_token(claims: &Claims) -> Result<String, jsonwebtoken::errors::Err
 
 #[cfg(test)]
 mod tests {
-    use crate::services::banned_token_store::HashsetBannedTokenStore;
-    use std::{collections::HashSet, env, sync::Arc};
+    use crate::{
+        services::hashset_banned_token_store::HashsetBannedTokenStore,
+        utils::constants::env::JWT_SECRET_ENV_VAR,
+    };
+    use std::{env, sync::Arc};
     use tokio::sync::RwLock;
 
     use super::*;
@@ -140,9 +148,7 @@ mod tests {
         env::set_var(JWT_SECRET_ENV_VAR, "test");
         let email = Email::parse("test@example.com".to_owned()).unwrap();
         let token = generate_auth_token(&email).unwrap();
-        let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore {
-            tokens: HashSet::default(),
-        }));
+        let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let result = validate_token(&token, banned_token_store).await.unwrap();
         assert_eq!(result.sub, "test@example.com");
 
@@ -157,9 +163,7 @@ mod tests {
     #[tokio::test]
     async fn test_validate_token_with_invalid_token() {
         let token = "invalid_token".to_owned();
-        let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore {
-            tokens: HashSet::default(),
-        }));
+        let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let result = validate_token(&token, banned_token_store).await;
         assert!(result.is_err());
     }

@@ -1,5 +1,12 @@
 use crate::helpers::{get_random_email, TestApp};
-use auth_service::{utils::constants::JWT_COOKIE_NAME, ErrorResponse};
+use auth_service::{
+    routes::TwoFactorAuthResponse,
+    utils::constants::{
+        env::{BASE_PATH_ENV_VAR, DROPLET_IP_ENV_VAR},
+        JWT_COOKIE_NAME,
+    },
+    ErrorResponse,
+};
 
 #[tokio::test]
 async fn login_should_return_422_if_malformed_credentials() {
@@ -35,6 +42,8 @@ async fn login_should_return_422_if_malformed_credentials() {
 
 #[tokio::test]
 async fn login_should_return_400_if_invalid_input() {
+    std::env::set_var(DROPLET_IP_ENV_VAR, "127.0.0.1");
+    std::env::set_var(BASE_PATH_ENV_VAR, "localhost");
     let app = TestApp::new().await;
     let invalid_inputs = [
         serde_json::json!({
@@ -134,4 +143,38 @@ async fn login_should_return_200_if_valid_credentials_and_2fa_disabled() {
         .expect("No auth cookie found");
 
     assert!(!auth_cookie.value().is_empty());
+}
+
+#[tokio::test]
+async fn login_should_return_206_if_valid_credentials_and_2fa_enabled() {
+    let app = TestApp::new().await;
+
+    let random_email = get_random_email();
+    let signup_body = serde_json::json!({
+        "email": random_email,
+        "password": "abcDEF123",
+        "requires2FA": true,
+        "recaptcha": "recaptcha",
+    });
+    let response = app.post_signup(&signup_body).await;
+
+    assert_eq!(response.status().as_u16(), 201);
+
+    let login_body = serde_json::json!({
+        "email": random_email.clone(),
+        "password": "abcDEF123",
+    });
+
+    let response = app.post_login(&login_body).await;
+    assert_eq!(response.status().as_u16(), 206);
+
+    let json_body = response
+        .json::<TwoFactorAuthResponse>()
+        .await
+        .expect("Could not deserialize response body to TwoFactorAuthResponse");
+
+    assert_eq!(json_body.message, "2FA required".to_string());
+
+    let login_attempt_id = json_body.login_attempt_id;
+    assert!(!login_attempt_id.is_empty());
 }

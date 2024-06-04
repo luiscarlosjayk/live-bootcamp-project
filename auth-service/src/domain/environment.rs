@@ -17,6 +17,7 @@ where
     Env: Into<String>,
 {
     let env_name = env_name.into();
+
     env::var(&env_name)
         .unwrap_or_else(|_| panic!("{}", format!("Missing {} environment variable.", &env_name)))
 }

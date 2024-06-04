@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 #[derive(Default, Debug)]
 pub struct HashmapUserStore {
-    pub users: HashMap<Email, User>,
+    users: HashMap<Email, User>,
 }
 
 #[async_trait]

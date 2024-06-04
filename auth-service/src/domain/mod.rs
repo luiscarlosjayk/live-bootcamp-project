@@ -6,6 +6,7 @@ pub mod password;
 pub mod path;
 pub mod user;
 
+pub use crate::domain::data_stores::*;
 pub use crate::domain::email::*;
 pub use crate::domain::error::*;
 pub use crate::domain::password::*;
