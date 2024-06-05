@@ -1,9 +1,188 @@
-use crate::helpers::TestApp;
+use auth_service::{domain::Email, utils::constants::JWT_COOKIE_NAME};
+
+use crate::helpers::{get_random_email, TestApp};
 
 #[tokio::test]
-async fn verify_2fa_returns_200() {
+async fn should_return_200_if_correct_code() {
     let app = TestApp::new().await;
-    let response = app.post_verify_2fa().await;
+    let random_email = get_random_email();
+    let email = Email::parse(random_email.clone()).expect("Could not parse random_email to Email");
+    let password = "abcDEF123".to_string();
+    // Signup
+    let body = serde_json::json!({
+        "email": &random_email,
+        "password": &password,
+        "requires2FA": true,
+        "recaptcha": "recaptcha",
+    });
+    let response = app.post_signup(&body).await;
+
+    assert_eq!(response.status().as_u16(), 201);
+
+    // Login
+    let body = serde_json::json!({
+        "email": &random_email,
+        "password": &password,
+    });
+
+    let response = app.post_login(&body).await;
+
+    assert_eq!(response.status().as_u16(), 206);
+
+    let (login_attempt_id, two_fa_code) = app
+        .two_fa_code_store
+        .read()
+        .await
+        .get_code(email.clone())
+        .await
+        .unwrap();
+
+    // Verify 2FA
+    let body = serde_json::json!({
+        "email": &random_email,
+        "2FACode": two_fa_code.as_ref(),
+        "loginAttemptId": login_attempt_id.as_ref(),
+    });
+
+    let response = app.post_verify_2fa(&body).await;
 
     assert_eq!(response.status().as_u16(), 200);
+
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
+        .expect("No auth cookie found");
+
+    assert!(!auth_cookie.value().is_empty());
+}
+
+#[tokio::test]
+async fn should_return_422_if_malformed_input() {
+    let app = TestApp::new().await;
+
+    let malformed_request = serde_json::json!({
+        "email": "test@test.com",
+        "2FACode": "1234",
+    });
+
+    let response = app.post_verify_2fa(&malformed_request).await;
+    assert_eq!(response.status().as_u16(), 422);
+}
+
+#[tokio::test]
+async fn should_return_400_if_invalid_input() {
+    let app = TestApp::new().await;
+
+    let invalid_request = serde_json::json!({
+        "email": "not_an_email",
+        "2FACode": "1234",
+        "loginAttemptId": "1234",
+    });
+
+    let response = app.post_verify_2fa(&invalid_request).await;
+    assert_eq!(response.status().as_u16(), 400);
+}
+
+#[tokio::test]
+async fn should_return_401_if_incorrect_credentials() {
+    let app = TestApp::new().await;
+    let random_email = get_random_email();
+    let email = Email::parse(random_email.clone()).expect("Could not parse random_email to Email");
+    let password = "abcDEF123".to_string();
+    // Signup
+    let body = serde_json::json!({
+        "email": &random_email,
+        "password": &password,
+        "requires2FA": true,
+        "recaptcha": "recaptcha",
+    });
+    let response = app.post_signup(&body).await;
+
+    assert_eq!(response.status().as_u16(), 201);
+
+    // Login
+    let body = serde_json::json!({
+        "email": &random_email,
+        "password": &password,
+    });
+
+    let response = app.post_login(&body).await;
+
+    assert_eq!(response.status().as_u16(), 206);
+
+    let (login_attempt_id, _) = app
+        .two_fa_code_store
+        .read()
+        .await
+        .get_code(email.clone())
+        .await
+        .unwrap();
+
+    // Verify 2FA
+    let body = serde_json::json!({
+        "email": &random_email,
+        "2FACode": "invalid_two_fa",
+        "loginAttemptId": login_attempt_id.as_ref(),
+    });
+
+    let response = app.post_verify_2fa(&body).await;
+
+    assert_eq!(response.status().as_u16(), 401);
+}
+
+#[tokio::test]
+async fn should_return_401_if_old_code() {
+    let app = TestApp::new().await;
+    let random_email = get_random_email();
+    let email = Email::parse(random_email.clone()).expect("Could not parse random_email to Email");
+    let password = "abcDEF123".to_string();
+    // Signup
+    let body = serde_json::json!({
+        "email": &random_email,
+        "password": &password,
+        "requires2FA": true,
+        "recaptcha": "recaptcha",
+    });
+    let response = app.post_signup(&body).await;
+
+    assert_eq!(response.status().as_u16(), 201);
+
+    // Login
+    let body = serde_json::json!({
+        "email": &random_email,
+        "password": &password,
+    });
+
+    let response = app.post_login(&body).await;
+
+    assert_eq!(response.status().as_u16(), 206);
+
+    let (login_attempt_id, two_fa_code) = app
+        .two_fa_code_store
+        .read()
+        .await
+        .get_code(email.clone())
+        .await
+        .unwrap();
+
+    // Second Login
+    let body = serde_json::json!({
+        "email": &random_email,
+        "password": &password,
+    });
+
+    let response = app.post_login(&body).await;
+
+    assert_eq!(response.status().as_u16(), 206);
+
+    // Verify 2FA
+    let body = serde_json::json!({
+        "email": &random_email,
+        "2FACode": two_fa_code.as_ref(),
+        "loginAttemptId": login_attempt_id.as_ref(),
+    });
+
+    let response = app.post_verify_2fa(&body).await;
+
+    assert_eq!(response.status().as_u16(), 401);
 }
