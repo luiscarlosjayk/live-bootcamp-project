@@ -186,3 +186,54 @@ async fn should_return_401_if_old_code() {
 
     assert_eq!(response.status().as_u16(), 401);
 }
+
+#[tokio::test]
+async fn should_return_401_if_same_code_twice() {
+    let app = TestApp::new().await;
+    let random_email = get_random_email();
+    let email = Email::parse(random_email.clone()).expect("Could not parse random_email to Email");
+    let password = "abcDEF123".to_string();
+    // Signup
+    let body = serde_json::json!({
+        "email": &random_email,
+        "password": &password,
+        "requires2FA": true,
+        "recaptcha": "recaptcha",
+    });
+    let response = app.post_signup(&body).await;
+
+    assert_eq!(response.status().as_u16(), 201);
+
+    // Login
+    let body = serde_json::json!({
+        "email": &random_email,
+        "password": &password,
+    });
+
+    let response = app.post_login(&body).await;
+
+    assert_eq!(response.status().as_u16(), 206);
+
+    let (login_attempt_id, two_fa_code) = app
+        .two_fa_code_store
+        .read()
+        .await
+        .get_code(email.clone())
+        .await
+        .unwrap();
+
+    // Verify 2FA
+    let body = serde_json::json!({
+        "email": &random_email,
+        "2FACode": two_fa_code.as_ref(),
+        "loginAttemptId": login_attempt_id.as_ref(),
+    });
+
+    let response = app.post_verify_2fa(&body).await;
+    assert_eq!(response.status().as_u16(), 200);
+
+    let response = app.post_verify_2fa(&body).await;
+    dbg!(&response.status().as_u16());
+
+    assert_eq!(response.status().as_u16(), 401);
+}

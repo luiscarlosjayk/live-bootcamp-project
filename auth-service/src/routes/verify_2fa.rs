@@ -37,7 +37,7 @@ pub async fn verify_2fa(
     {
         Ok(tuple) => tuple,
         Err(_) => {
-            return (jar, Err(AuthAPIError::InvalidCredentials));
+            return (jar, Err(AuthAPIError::IncorrectCredentials));
         }
     };
 
@@ -59,6 +59,17 @@ pub async fn verify_2fa(
     };
 
     let jar = jar.add(auth_cookie);
+
+    if state
+        .two_fa_code_store
+        .write()
+        .await
+        .remove_code(&email)
+        .await
+        .is_err()
+    {
+        return (jar, Err(AuthAPIError::UnexpectedError));
+    }
 
     (jar, Ok(StatusCode::OK.into_response()))
 }
