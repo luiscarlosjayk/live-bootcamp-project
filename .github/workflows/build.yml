@@ -57,7 +57,7 @@ jobs:
       
       - name: Install Protoc
         run: |
-          apt install -y protobuf-compiler
+          apt-get install -y protobuf-compiler
           protoc --version
 
       - name: Build and test app-service code
