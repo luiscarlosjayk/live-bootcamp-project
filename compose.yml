@@ -1,0 +1,93 @@
+services:
+  app-service:
+    container_name: app_service
+    image: luiscarlosjayk/app-service # specify name of image on Docker Hub
+    restart: "unless-stopped" # automatically restart container when server crashes
+    environment: # set up environment variables
+      BASE_PATH: ${BASE_PATH}
+      ENVIRONMENT: remote
+    ports:
+      - "8000:8000" # expose port 8000 so that applications outside the container can connect to it 
+    depends_on: # only run app-service after auth-service has started
+      auth-service:
+        condition: service_started
+    networks:
+      - certs-network
+
+  auth-service:
+    container_name: auth_service
+    image: luiscarlosjayk/auth-service
+    restart: "unless-stopped" # automatically restart container when server crashes
+    ports:
+      - "3000:3000" # expose port 3000 so that applications outside the container can connect to it 
+    networks:
+      - certs-network
+    environment:
+      ENVIRONMENT: remote
+      BASE_PATH: ${BASE_PATH}
+      RECAPTCHA_SECRET: ${RECAPTCHA_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+      DROPLET_IP: ${DROPLET_IP}
+      DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD}@db:5432"
+    # depends_on:
+    #   - db
+  
+  reverse-proxy:
+    container_name: nginx
+    image: nginx:latest
+    restart: "unless-stopped" # automatically restart container when server crashes
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./proxy/templates:/etc/nginx/templates
+      - web-root:/var/www/html
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    environment:
+      NGINX_HOST: localhost
+      NGINX_PORT: 80
+      NGINX_HTTPS_PORT: 443
+      AUTH_SERVICE_PORT: 3000
+      APP_SERVICE_PORT: 8000
+      DOMAIN: livebootcamp.luiscarlosjayk.com
+    depends_on:
+      auth-service:
+        condition: service_started
+      app-service:
+        condition: service_started
+    networks:
+      - certs-network
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - web-root:/var/www/html
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    depends_on:
+      - reverse-proxy
+    command: certonly --webroot --webroot-path=/var/www/html --email luiscarlosjayk@gmail.com --agree-tos --no-eff-email --force-renewal -d livebootcamp.luiscarlosjayk.com -d www.livebootcamp.luiscarlosjayk.com
+
+  # db:
+  #   image: postgres:15.2-alpine
+  #   restart: always
+  #   environment:
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - db:/var/lib/postgresql/data
+
+volumes:
+  certbot-etc:
+  certbot-var:
+  web-root:
+    driver: local
+  # db:
+  #   driver: local
+
+networks:
+  certs-network:
+    driver: bridge
