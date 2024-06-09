@@ -1,0 +1,26 @@
+syntax = "proto3";
+package authentication;
+
+service Auth {
+    rpc VerifyToken (VerifyTokenRequest) returns (VerifyTokenResponse);
+}
+
+message VerifyTokenRequest {
+    string token = 1;
+}
+
+message VerifyTokenResponse {
+    StatusCode status = 1;
+}
+
+enum StatusCode {
+    Unespecified = 0;
+    Ok = 1;
+    UserAlreadyExists = 2;
+    InvalidCredentials = 3;
+    UnexpectedError = 4;
+    InvalidRecaptcha = 5;
+    IncorrectCredentials = 6;
+    MissingToken = 7;
+    InvalidToken = 8;
+}

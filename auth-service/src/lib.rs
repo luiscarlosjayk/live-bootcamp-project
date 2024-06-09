@@ -21,8 +21,6 @@ pub mod utils;
 // This struct encapsulates our application-related logic.
 pub struct Application {
     server: Serve<Router, Router>,
-    // address is exposed as a public field
-    // so we have access to it in tests.
     pub address: String,
 }
 
@@ -66,12 +64,17 @@ impl Application {
         let server = axum::serve(listener, router);
 
         // Create a new Application instance and return it
-        Ok(Self { server, address })
+        Ok(Self {
+            address: address.to_string(),
+            server,
+        })
     }
 
     pub async fn run(self) -> Result<(), std::io::Error> {
         println!("listening on {}", &self.address);
-        self.server.await
+        self.server.await?;
+
+        Ok(())
     }
 }
 
