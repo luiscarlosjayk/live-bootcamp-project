@@ -24,6 +24,7 @@ env:
   DROPLET_IP: "${{ vars.DROPLET_IP }}"
   POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
   SQLX_OFFLINE: true
+  DATABASE_URL: "DATABASE_URL=postgres://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432"
 
 jobs:
   deploy:
@@ -79,9 +80,7 @@ jobs:
         run: |
           export JWT_SECRET=secret
           export DATABASE_URL=postgres://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432
-          cargo install sqlx-cli
           cargo build --verbose
-          cargo sqlx prepare
           cargo test --verbose
 
         # Set up Docker Buildx for multi-platform builds
