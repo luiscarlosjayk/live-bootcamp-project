@@ -29,8 +29,8 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       DROPLET_IP: ${DROPLET_IP}
       DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD}@db:5432"
-    # depends_on:
-    #   - db
+    depends_on:
+      - db
   
   reverse-proxy:
     container_name: nginx
@@ -70,23 +70,23 @@ services:
       - reverse-proxy
     command: certonly --webroot --webroot-path=/var/www/html --email luiscarlosjayk@gmail.com --agree-tos --no-eff-email --force-renewal -d livebootcamp.luiscarlosjayk.com -d www.livebootcamp.luiscarlosjayk.com
 
-  # db:
-  #   image: postgres:15.2-alpine
-  #   restart: always
-  #   environment:
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - db:/var/lib/postgresql/data
+  db:
+    image: postgres:15.2-alpine
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
 
 volumes:
   certbot-etc:
   certbot-var:
   web-root:
     driver: local
-  # db:
-  #   driver: local
+  db:
+    driver: local
 
 networks:
   certs-network:

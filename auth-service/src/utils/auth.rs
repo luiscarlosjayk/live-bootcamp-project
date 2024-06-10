@@ -104,8 +104,7 @@ pub fn create_token(claims: &Claims) -> Result<String, jsonwebtoken::errors::Err
 #[cfg(test)]
 mod tests {
     use crate::{
-        services::hashset_banned_token_store::HashsetBannedTokenStore,
-        utils::constants::env::JWT_SECRET_ENV_VAR,
+        services::data_stores::HashsetBannedTokenStore, utils::constants::env::JWT_SECRET_ENV_VAR,
     };
     use std::{env, sync::Arc};
     use tokio::sync::RwLock;

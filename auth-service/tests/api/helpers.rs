@@ -1,14 +1,17 @@
 use auth_service::{
     app_state::{AppState, BannedTokenStoreType, EmailClientType, TwoFACodeStoreType},
     domain::path::Paths,
+    get_postgres_pool,
     services::{
-        hashmap_two_fa_code_store::HashmapTwoFACodeStore, hashmap_user_store::HashmapUserStore,
-        hashset_banned_token_store::HashsetBannedTokenStore, mock_email_client::MockEmailClient,
+        data_stores::{HashmapTwoFACodeStore, HashsetBannedTokenStore},
+        mock_email_client::MockEmailClient,
+        postgres_user_store::PostgresUserStore,
     },
     utils::constants::{self, test},
     Application,
 };
 use reqwest::cookie::Jar;
+use sqlx::{postgres::PgPoolOptions, Executor, PgPool};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -35,7 +38,8 @@ impl TestApp {
         std::env::set_var(constants::env::JWT_SECRET_ENV_VAR, "foobar");
         std::env::set_var(constants::env::BASE_PATH_ENV_VAR, "http://localhost");
 
-        let user_store = Arc::new(tokio::sync::RwLock::new(HashmapUserStore::default()));
+        let pg_pool = configure_postgresql().await;
+        let user_store = Arc::new(tokio::sync::RwLock::new(PostgresUserStore::new(pg_pool)));
         let banned_token_store =
             Arc::new(tokio::sync::RwLock::new(HashsetBannedTokenStore::default()));
         let two_fa_code_store =
@@ -150,6 +154,50 @@ impl TestApp {
             .await
             .expect("Failed to execute request.")
     }
+}
+
+async fn configure_postgresql() -> PgPool {
+    let postgresql_conn_url = constants::DATABASE_URL.to_owned();
+
+    // We are creating a new database for each test case, and we need to ensure each database has a unique name!
+    let db_name = Uuid::new_v4().to_string();
+
+    configure_database(&postgresql_conn_url, &db_name).await;
+
+    let postgresql_conn_url_with_db = format!("{}/{}", postgresql_conn_url, db_name);
+
+    // Create a new connection pool and return it
+    get_postgres_pool(&postgresql_conn_url_with_db)
+        .await
+        .expect("Failed to create Postgres connection pool!")
+}
+
+async fn configure_database(db_conn_string: &str, db_name: &str) {
+    // Create database connection
+    let connection = PgPoolOptions::new()
+        .connect(db_conn_string)
+        .await
+        .expect("Failed to create Postgres connection pool.");
+
+    // Create a new database
+    connection
+        .execute(format!(r#"CREATE DATABASE "{}";"#, db_name).as_str())
+        .await
+        .expect("Failed to create database.");
+
+    // Connect to new database
+    let db_conn_string = format!("{}/{}", db_conn_string, db_name);
+
+    let connection = PgPoolOptions::new()
+        .connect(&db_conn_string)
+        .await
+        .expect("Failed to create Postgres connection pool.");
+
+    // Run migrations against new database
+    sqlx::migrate!()
+        .run(&connection)
+        .await
+        .expect("Failed to migrate the database");
 }
 
 pub fn get_random_email() -> String {

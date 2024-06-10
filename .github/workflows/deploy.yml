@@ -16,6 +16,8 @@ on:
         required: true
       JWT_SECRET:
         required: true
+      POSTGRES_PASSWORD:
+        required: true
   
   workflow_dispatch:
 
@@ -25,6 +27,8 @@ env:
   RECAPTCHA_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
   DROPLET_IP: ${{ vars.DROPLET_IP }}
+  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  SQLX_OFFLINE: true
 
 jobs:
   deployment:
@@ -53,7 +57,7 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{ vars.DROPLET_IP }}
-          envs: BASE_PATH, ENVIRONMENT, RECAPTCHA_SECRET, JWT_SECRET, DROPLET_IP
+          envs: BASE_PATH, ENVIRONMENT, RECAPTCHA_SECRET, JWT_SECRET, DROPLET_IP, POSTGRES_PASSWORD
 
           username: root
           password: ${{ secrets.DROPLET_PASSWORD }}
