@@ -15,8 +15,10 @@ use tokio::sync::RwLock;
 async fn main() {
     dotenv().ok();
 
-    // let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
     let pg_pool = configure_postgresql().await;
+
+    let _res = sqlx::query("SELECT * FROM users").fetch_all(&pg_pool).await;
+
     let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
     let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
     let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::default()));

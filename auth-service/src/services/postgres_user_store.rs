@@ -6,7 +6,6 @@ use argon2::{
     password_hash::SaltString, Algorithm, Argon2, Params, PasswordHash, PasswordHasher,
     PasswordVerifier, Version,
 };
-use serde::Deserialize;
 use sqlx::PgPool;
 use std::error::Error;
 
@@ -20,7 +19,7 @@ impl PostgresUserStore {
     }
 }
 
-#[derive(sqlx::FromRow, Deserialize)]
+#[derive(sqlx::FromRow, Debug)]
 struct PostgresUser {
     email: String,
     password_hash: String,
@@ -35,12 +34,12 @@ impl UserStore for PostgresUserStore {
             .await
             .expect("Could not compute password hash");
         let requires_2fa = user.requires_2fa;
-        let _ = sqlx::query!(
-            r#"INSERT INTO users (email, password_hash, requires_2fa) VALUES ($1, $2, $3)"#,
-            email,
-            password_hash,
-            requires_2fa,
+        let _ = sqlx::query(
+            r#"INSERT INTO users (email, password_hash, requires_2fa) VALUES ($1, $2, $3)"#
         )
+        .bind(email)
+        .bind(password_hash)
+        .bind(requires_2fa)
         .execute(&self.pool)
         .await
         .map_err(|_| UserStoreError::UnexpectedError)?;
@@ -49,7 +48,8 @@ impl UserStore for PostgresUserStore {
     }
 
     async fn delete_user(&mut self, user: User) -> Result<(), UserStoreError> {
-        let _ = sqlx::query!(r#"DELETE FROM users WHERE email = $1"#, user.email.as_ref())
+        let _ = sqlx::query(r#"DELETE FROM users WHERE email = $1"#)
+            .bind(user.email.as_ref())
             .execute(&self.pool)
             .await
             .map_err(|_| UserStoreError::UnexpectedError)?;
@@ -58,11 +58,10 @@ impl UserStore for PostgresUserStore {
     }
 
     async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
-        let result = sqlx::query_as!(
-            PostgresUser,
+        let result = sqlx::query_as::<_, PostgresUser>(
             r#"SELECT * FROM users WHERE email = $1"#,
-            email.as_ref()
         )
+        .bind(email.as_ref())
         .fetch_one(&self.pool)
         .await
         .map_err(|_| UserStoreError::UserNotFound)?;
