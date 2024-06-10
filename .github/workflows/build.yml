@@ -80,8 +80,8 @@ jobs:
           export JWT_SECRET=secret
           export DATABASE_URL=postgres://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432
           cargo install sqlx-cli
-          cargo sqlx prepare
           cargo build --verbose
+          cargo sqlx prepare
           cargo test --verbose
 
         # Set up Docker Buildx for multi-platform builds
