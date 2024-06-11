@@ -10,7 +10,7 @@ use auth_service::{
 
 #[tokio::test]
 async fn login_should_return_422_if_malformed_credentials() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let invalid_inputs = [
         serde_json::json!({
             "email": get_random_email(),
@@ -38,13 +38,16 @@ async fn login_should_return_422_if_malformed_credentials() {
             invalid_body
         );
     }
+
+    // Clean up database
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn login_should_return_400_if_invalid_input() {
     std::env::set_var(DROPLET_IP_ENV_VAR, "127.0.0.1");
     std::env::set_var(BASE_PATH_ENV_VAR, "localhost");
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let invalid_inputs = [
         serde_json::json!({
             "email": get_random_email(),
@@ -91,11 +94,14 @@ async fn login_should_return_400_if_invalid_input() {
             "Invalid credentials".to_string()
         )
     }
+
+    // Clean up database
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn login_should_return_401_if_incorrect_credentials() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let body = serde_json::json!({
         "email": "unexisting@test.com",
         "password": "abcDEF123",
@@ -112,11 +118,14 @@ async fn login_should_return_401_if_incorrect_credentials() {
             .error,
         "Unauthorized".to_string()
     );
+
+    // Clean up database
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn login_should_return_200_if_valid_credentials_and_2fa_disabled() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
     let signup_body = serde_json::json!({
@@ -143,11 +152,14 @@ async fn login_should_return_200_if_valid_credentials_and_2fa_disabled() {
         .expect("No auth cookie found");
 
     assert!(!auth_cookie.value().is_empty());
+
+    // Clean up database
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn login_should_return_206_if_valid_credentials_and_2fa_enabled() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
     let signup_body = serde_json::json!({
@@ -177,4 +189,7 @@ async fn login_should_return_206_if_valid_credentials_and_2fa_enabled() {
 
     let login_attempt_id = json_body.login_attempt_id;
     assert!(!login_attempt_id.is_empty());
+
+    // Clean up database
+    app.clean_up().await;
 }

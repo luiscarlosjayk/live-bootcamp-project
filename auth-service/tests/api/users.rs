@@ -2,7 +2,7 @@ use crate::helpers::{get_random_email, TestApp};
 
 #[tokio::test]
 async fn should_return_200_if_deletes_user_successfully() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
@@ -17,4 +17,7 @@ async fn should_return_200_if_deletes_user_successfully() {
 
     let delete_response = app.delete_user(random_email).await;
     assert_eq!(delete_response.status().as_u16(), 200);
+
+    // Clean up database
+    app.clean_up().await;
 }

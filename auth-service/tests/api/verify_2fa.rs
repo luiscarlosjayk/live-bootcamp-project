@@ -4,7 +4,7 @@ use crate::helpers::{get_random_email, TestApp};
 
 #[tokio::test]
 async fn should_return_200_if_correct_code() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let random_email = get_random_email();
     let email = Email::parse(random_email.clone()).expect("Could not parse random_email to Email");
     let password = "abcDEF123".to_string();
@@ -54,11 +54,14 @@ async fn should_return_200_if_correct_code() {
         .expect("No auth cookie found");
 
     assert!(!auth_cookie.value().is_empty());
+
+    // Clean up database
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_422_if_malformed_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let malformed_request = serde_json::json!({
         "email": "test@test.com",
@@ -67,11 +70,14 @@ async fn should_return_422_if_malformed_input() {
 
     let response = app.post_verify_2fa(&malformed_request).await;
     assert_eq!(response.status().as_u16(), 422);
+
+    // Clean up database
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let invalid_request = serde_json::json!({
         "email": "not_an_email",
@@ -81,11 +87,14 @@ async fn should_return_400_if_invalid_input() {
 
     let response = app.post_verify_2fa(&invalid_request).await;
     assert_eq!(response.status().as_u16(), 400);
+
+    // Clean up database
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_incorrect_credentials() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let random_email = get_random_email();
     let email = Email::parse(random_email.clone()).expect("Could not parse random_email to Email");
     let password = "abcDEF123".to_string();
@@ -128,11 +137,14 @@ async fn should_return_401_if_incorrect_credentials() {
     let response = app.post_verify_2fa(&body).await;
 
     assert_eq!(response.status().as_u16(), 401);
+
+    // Clean up database
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_old_code() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let random_email = get_random_email();
     let email = Email::parse(random_email.clone()).expect("Could not parse random_email to Email");
     let password = "abcDEF123".to_string();
@@ -185,11 +197,14 @@ async fn should_return_401_if_old_code() {
     let response = app.post_verify_2fa(&body).await;
 
     assert_eq!(response.status().as_u16(), 401);
+
+    // Clean up database
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_same_code_twice() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     let random_email = get_random_email();
     let email = Email::parse(random_email.clone()).expect("Could not parse random_email to Email");
     let password = "abcDEF123".to_string();
@@ -236,4 +251,7 @@ async fn should_return_401_if_same_code_twice() {
     dbg!(&response.status().as_u16());
 
     assert_eq!(response.status().as_u16(), 401);
+
+    // Clean up database
+    app.clean_up().await;
 }
