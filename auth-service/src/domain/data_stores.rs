@@ -1,7 +1,7 @@
 use crate::domain::{Email, Password, User};
 use async_trait::async_trait;
 use rand::Rng;
-use regex_automata::{meta::Regex, Input};
+use regex_automata::meta::Regex;
 
 #[derive(Debug, PartialEq)]
 pub enum UserStoreError {
@@ -46,7 +46,7 @@ pub trait TwoFACodeStore {
 
     async fn get_code(
         &self,
-        email: Email,
+        email: &Email,
     ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError>;
 }
 
@@ -92,8 +92,8 @@ pub struct TwoFACode(String);
 
 impl TwoFACode {
     pub fn parse(code: String) -> Result<Self, String> {
-        let regex = Regex::new(r"ˆ[0-9]{6,6}$").expect("Could'n build regex pattern");
-        let is_valid = regex.is_match(Input::new(&code));
+        let regex = Regex::new(r#"(?m)^\d{6}$"#).expect("Could not build regex pattern");
+        let is_valid = regex.is_match(&code);
 
         match is_valid {
             true => Ok(Self(code)),

@@ -32,9 +32,9 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
 
     async fn get_code(
         &self,
-        email: Email,
+        email: &Email,
     ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError> {
-        match self.codes.get(&email) {
+        match self.codes.get(email) {
             Some(code) => Ok(code.clone()),
             None => Err(TwoFACodeStoreError::LoginAttemptIdNotFound),
         }
@@ -95,7 +95,7 @@ mod tests {
             .await;
         assert!(result.is_ok());
 
-        let result = two_fa_code_store.get_code(email.clone()).await.unwrap();
+        let result = two_fa_code_store.get_code(&email).await.unwrap();
         assert_eq!(result.0, login_attempt_id);
         assert_eq!(result.1, code);
     }

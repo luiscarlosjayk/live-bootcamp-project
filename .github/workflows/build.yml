@@ -2,104 +2,109 @@ name: Unit Tests & Build
 
 # Trigger the workflow when changes are pushed to the main branch
 on:
-  push:
-    branches:
-      - main
-      - features/*
-      - '!wip/*'
+    push:
+        branches:
+            - main
+            - features/*
+            - '!wip/*'
 
-  workflow_dispatch:
-    inputs:
-      deploy:
-        description: 'Triggers the deploy workflow'
-        type: boolean
-        required: true
-        default: false
+    workflow_dispatch:
+        inputs:
+            deploy:
+                description: 'Triggers the deploy workflow'
+                type: boolean
+                required: true
+                default: false
 
 env:
-  BASE_PATH: "${{ vars.BASE_PATH }}"
-  ENVIRONMENT: "remote"
-  RECAPTCHA_SECRET: "${{ secrets.RECAPTCHA_SECRET }}"
-  JWT_SECRET: "${{ secrets.JWT_SECRET }}"
-  DROPLET_IP: "${{ vars.DROPLET_IP }}"
-  POSTGRES_PASSWORD: "${{ secrets.POSTGRES_PASSWORD }}"
-  SQLX_OFFLINE: true
-  DATABASE_URL: "DATABASE_URL=postgres://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432"
+    BASE_PATH: '${{ vars.BASE_PATH }}'
+    ENVIRONMENT: 'remote'
+    RECAPTCHA_SECRET: '${{ secrets.RECAPTCHA_SECRET }}'
+    JWT_SECRET: '${{ secrets.JWT_SECRET }}'
+    DROPLET_IP: '${{ vars.DROPLET_IP }}'
+    POSTGRES_PASSWORD: '${{ secrets.POSTGRES_PASSWORD }}'
+    SQLX_OFFLINE: true
+    DATABASE_URL: 'DATABASE_URL=postgres://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432'
 
 jobs:
-  deploy:
-    name: Deploy
-    uses: ./.github/workflows/deploy.yml
-    needs: build
-    secrets: inherit
+    deploy:
+        name: Deploy
+        uses: ./.github/workflows/deploy.yml
+        needs: build
+        secrets: inherit
 
-  build:
-    runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15.2-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
+        services:
+            postgres:
+                image: postgres:15.2-alpine
+                env:
+                    POSTGRES_USER: postgres
+                    POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+                    POSTGRES_DB: postgres
+                ports:
+                    - 5432:5432
 
-    steps:
-      # Checkout code from the repository
-      - name: Checkout code
-        uses: actions/checkout@v4
+            redis:
+                image: redis:7.0-alpine
+                ports:
+                    - 6379:6379
 
-      # Cache dependencies to speed up build times
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            app-service/.cargo
-            app-service/target/
-            auth-service/.cargo
-            auth-service/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+        steps:
+            # Checkout code from the repository
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-      
-      - name: Build and test app-service code
-        working-directory: ./app-service
-        run: |
-          cargo build --verbose
-          cargo test --verbose
+            # Cache dependencies to speed up build times
+            - name: Cache dependencies
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      app-service/.cargo
+                      app-service/target/
+                      auth-service/.cargo
+                      auth-service/target/
+                  key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+                  restore-keys: ${{ runner.os }}-cargo-
 
-      - name: Build and test auth-service code
-        working-directory: ./auth-service
-        run: |
-          export JWT_SECRET=secret
-          export DATABASE_URL=postgres://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432
-          cargo build --verbose
-          cargo test --verbose
+            - name: Install Rust
+              uses: actions-rs/toolchain@v1
+              with:
+                  profile: minimal
+                  toolchain: stable
 
-        # Set up Docker Buildx for multi-platform builds
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+            - name: Build and test app-service code
+              working-directory: ./app-service
+              run: |
+                  cargo build --verbose
+                  cargo test --verbose
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+            - name: Build and test auth-service code
+              working-directory: ./auth-service
+              run: |
+                  export JWT_SECRET=secret
+                  export DATABASE_URL=postgres://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432
+                  cargo build --verbose
+                  cargo test --verbose
 
-      - name: Build and push Docker images
-        uses: docker/bake-action@v2.3.0
-        with:
-          push: true
-          files: |
-            compose.yml
-            compose.override.yml
-          set: |
-            *.cache-from=type=gha
-            *.cache-to=type=gha,mode=max
+              # Set up Docker Buildx for multi-platform builds
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v2
+
+            - name: Log in to Docker Hub
+              uses: docker/login-action@v2
+              with:
+                  username: ${{ secrets.DOCKER_USERNAME }}
+                  password: ${{ secrets.DOCKER_PASSWORD }}
+
+            - name: Build and push Docker images
+              uses: docker/bake-action@v2.3.0
+              with:
+                  push: true
+                  files: |
+                      compose.yml
+                      compose.override.yml
+                  set: |
+                      *.cache-from=type=gha
+                      *.cache-to=type=gha,mode=max

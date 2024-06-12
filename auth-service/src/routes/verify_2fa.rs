@@ -28,18 +28,13 @@ pub async fn verify_2fa(
         }
     };
 
-    let (login_attempt_id_result, two_fa_code_result) = match state
-        .two_fa_code_store
-        .read()
-        .await
-        .get_code(email.clone())
-        .await
-    {
-        Ok(tuple) => tuple,
-        Err(_) => {
-            return (jar, Err(AuthAPIError::IncorrectCredentials));
-        }
-    };
+    let (login_attempt_id_result, two_fa_code_result) =
+        match state.two_fa_code_store.read().await.get_code(&email).await {
+            Ok(tuple) => tuple,
+            Err(_) => {
+                return (jar, Err(AuthAPIError::IncorrectCredentials));
+            }
+        };
 
     let login_attempt_id = request.login_attempt_id;
 

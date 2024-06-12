@@ -33,7 +33,7 @@ async fn should_return_200_if_correct_code() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(email.clone())
+        .get_code(&email)
         .await
         .unwrap();
 
@@ -57,7 +57,6 @@ async fn should_return_200_if_correct_code() {
 
     // Clean up database
     app.clean_up().await;
-    
 }
 
 #[tokio::test]
@@ -74,7 +73,6 @@ async fn should_return_422_if_malformed_input() {
 
     // Clean up database
     app.clean_up().await;
-    
 }
 
 #[tokio::test]
@@ -92,7 +90,6 @@ async fn should_return_400_if_invalid_input() {
 
     // Clean up database
     app.clean_up().await;
-    
 }
 
 #[tokio::test]
@@ -126,7 +123,7 @@ async fn should_return_401_if_incorrect_credentials() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(email.clone())
+        .get_code(&email)
         .await
         .unwrap();
 
@@ -143,7 +140,6 @@ async fn should_return_401_if_incorrect_credentials() {
 
     // Clean up database
     app.clean_up().await;
-    
 }
 
 #[tokio::test]
@@ -177,7 +173,7 @@ async fn should_return_401_if_old_code() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(email.clone())
+        .get_code(&email)
         .await
         .unwrap();
 
@@ -204,7 +200,6 @@ async fn should_return_401_if_old_code() {
 
     // Clean up database
     app.clean_up().await;
-    
 }
 
 #[tokio::test]
@@ -238,7 +233,7 @@ async fn should_return_401_if_same_code_twice() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(email.clone())
+        .get_code(&email)
         .await
         .unwrap();
 
@@ -259,5 +254,4 @@ async fn should_return_401_if_same_code_twice() {
 
     // Clean up database
     app.clean_up().await;
-    
 }

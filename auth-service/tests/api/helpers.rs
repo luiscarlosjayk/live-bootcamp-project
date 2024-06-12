@@ -3,7 +3,7 @@ use auth_service::{
     domain::path::Paths,
     get_postgres_pool,
     services::{
-        data_stores::{HashmapTwoFACodeStore, RedisBannedTokenStore},
+        data_stores::{RedisBannedTokenStore, RedisTwoFACodeStore},
         mock_email_client::MockEmailClient,
         postgres_user_store::PostgresUserStore,
     },
@@ -51,12 +51,11 @@ impl TestApp {
 
         let user_store = Arc::new(tokio::sync::RwLock::new(PostgresUserStore::new(pg_pool)));
         let banned_token_store = Arc::new(tokio::sync::RwLock::new(RedisBannedTokenStore::new(
+            redis_connection.clone(),
+        )));
+        let two_fa_code_store = Arc::new(tokio::sync::RwLock::new(RedisTwoFACodeStore::new(
             redis_connection,
         )));
-        // let banned_token_store =
-        //     Arc::new(tokio::sync::RwLock::new(HashsetBannedTokenStore::default()));
-        let two_fa_code_store =
-            Arc::new(tokio::sync::RwLock::new(HashmapTwoFACodeStore::default()));
         let email_client = Arc::new(MockEmailClient);
 
         let app_state = AppState::new(
