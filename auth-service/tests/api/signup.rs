@@ -30,6 +30,7 @@ async fn signup_should_return_201_if_valid_input() {
 
     // Clean up database
     app.clean_up().await;
+    
 }
 
 #[tokio::test]
@@ -91,6 +92,7 @@ async fn signup_should_return_400_if_invalid_input() {
 
     // Clean up database
     app.clean_up().await;
+    
 }
 
 #[tokio::test]
@@ -119,4 +121,5 @@ async fn signup_should_return_409_if_email_already_exists() {
 
     // Clean up database
     app.clean_up().await;
+    
 }

@@ -3,13 +3,14 @@ use auth_service::{
     domain::path::Paths,
     get_postgres_pool,
     services::{
-        data_stores::{HashmapTwoFACodeStore, HashsetBannedTokenStore},
+        data_stores::{HashmapTwoFACodeStore, RedisBannedTokenStore},
         mock_email_client::MockEmailClient,
         postgres_user_store::PostgresUserStore,
     },
     utils::constants::{self, test},
     Application,
 };
+use redis::{Client as RedisClient, RedisResult};
 use reqwest::cookie::Jar;
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions},
@@ -46,9 +47,14 @@ impl TestApp {
         // We are creating a new database for each test case, and we need to ensure each database has a unique name!
         let database_name = Uuid::new_v4().to_string();
         let pg_pool = configure_postgresql(&database_name).await;
+        let redis_connection = Arc::new(tokio::sync::RwLock::new(configure_redis()));
+
         let user_store = Arc::new(tokio::sync::RwLock::new(PostgresUserStore::new(pg_pool)));
-        let banned_token_store =
-            Arc::new(tokio::sync::RwLock::new(HashsetBannedTokenStore::default()));
+        let banned_token_store = Arc::new(tokio::sync::RwLock::new(RedisBannedTokenStore::new(
+            redis_connection,
+        )));
+        // let banned_token_store =
+        //     Arc::new(tokio::sync::RwLock::new(HashsetBannedTokenStore::default()));
         let two_fa_code_store =
             Arc::new(tokio::sync::RwLock::new(HashmapTwoFACodeStore::default()));
         let email_client = Arc::new(MockEmailClient);
@@ -177,6 +183,20 @@ impl Drop for TestApp {
             panic!("AppState was not cleaned up!");
         }
     }
+}
+
+fn configure_redis() -> redis::Connection {
+    let redis_hostname = constants::REDIS_HOST_NAME.to_owned();
+
+    get_redis_client(redis_hostname)
+        .expect("Failed to get Redis client")
+        .get_connection()
+        .expect("Failed to get Redis connection")
+}
+
+fn get_redis_client(redis_hostname: String) -> RedisResult<RedisClient> {
+    let redis_url = format!("redis://{}/", redis_hostname);
+    redis::Client::open(redis_url)
 }
 
 async fn configure_postgresql(db_name: &str) -> PgPool {

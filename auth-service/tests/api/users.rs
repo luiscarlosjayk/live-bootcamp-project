@@ -20,4 +20,5 @@ async fn should_return_200_if_deletes_user_successfully() {
 
     // Clean up database
     app.clean_up().await;
+    
 }

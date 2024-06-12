@@ -47,6 +47,7 @@ async fn should_return_200_valid_token() {
 
     // Clean up database
     app.clean_up().await;
+    
 }
 
 #[tokio::test]
@@ -76,6 +77,7 @@ async fn should_return_401_if_invalid_token() {
 
     // Clean up database
     app.clean_up().await;
+    
 }
 
 #[tokio::test]
@@ -139,6 +141,7 @@ async fn should_return_401_if_banned_token() {
 
     // Clean up database
     app.clean_up().await;
+    
 }
 
 #[tokio::test]
@@ -159,4 +162,5 @@ async fn should_return_422_if_malformed_input() {
 
     // Clean up database
     app.clean_up().await;
+    
 }

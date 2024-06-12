@@ -12,4 +12,5 @@ async fn root_returns_auth_ui() {
 
     // Clean up database
     app.clean_up().await;
+    
 }
