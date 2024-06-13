@@ -106,6 +106,8 @@ jobs:
                   push: true
                   files: |
                       compose.yml
-                  #   set: |
-                  #       *.cache-from=type=gha
-                  #       *.cache-to=type=gha,mode=max
+                  targets:
+                      default
+                      #   set: |
+                      #       *.cache-from=type=gha
+                      #       *.cache-to=type=gha,mode=max
