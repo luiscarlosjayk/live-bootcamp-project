@@ -5,6 +5,7 @@ services:
     restart: "unless-stopped" # automatically restart container when server crashes
     environment: # set up environment variables
       BASE_PATH: ${BASE_PATH}
+      DROPLET_IP: ${DROPLET_IP}
       ENVIRONMENT: remote
     ports:
       - "8000:8000" # expose port 8000 so that applications outside the container can connect to it 
@@ -22,15 +23,21 @@ services:
       - "3000:3000" # expose port 3000 so that applications outside the container can connect to it 
     networks:
       - certs-network
+      - db
+      - redis
     environment:
       ENVIRONMENT: remote
       BASE_PATH: ${BASE_PATH}
       RECAPTCHA_SECRET: ${RECAPTCHA_SECRET}
       JWT_SECRET: ${JWT_SECRET}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       DROPLET_IP: ${DROPLET_IP}
-      DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD}@db:5432"
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
   
   reverse-proxy:
     container_name: nginx
@@ -79,12 +86,21 @@ services:
       - "5432:5432"
     volumes:
       - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - db
 
   redis:
     image: redis:7.0-alpine
     restart: always
     ports:
       - "6379:6379"
+    networks:
+      - redis
 
 volumes:
   certbot-etc:
@@ -96,4 +112,8 @@ volumes:
 
 networks:
   certs-network:
+    driver: bridge
+  db:
+    driver: bridge
+  redis:
     driver: bridge

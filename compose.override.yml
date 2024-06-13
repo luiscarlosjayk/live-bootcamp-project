@@ -2,23 +2,18 @@ services:
   app-service:
     build:
       context: ./app-service # specify directory where local Dockerfile is located
+    env_file:
+      - .env
     environment:
       BASE_PATH: http://localhost
       DROPLET_IP: 192.168.0.1
       ENVIRONMENT: local
-    volumes:
-      - ./.env:/app/.env
 
   auth-service:
     build:
       context: ./auth-service # specify directory where local Dockerfile is located
-    environment:
-      BASE_PATH: http://localhost
-      DROPLET_IP: 192.168.0.1
-      ENVIRONMENT: local
-    volumes:
-      - ./.env:/app/.env
-      
+    env_file:
+      - .env
 
   reverse-proxy:
     restart: "unless-stopped" # automatically restart container when server crashes
@@ -28,6 +23,11 @@ services:
       - ./proxy/local_templates:/etc/nginx/templates
     environment:
       BASE_PATH: http://localhost
+      DATABASE_URL:
   
   certbot: # Do not run certbot container in local
     entrypoint: ["echo", "certbot disabled"]
+
+  db:
+    env_file:
+      - .env

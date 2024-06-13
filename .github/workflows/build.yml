@@ -17,14 +17,13 @@ on:
                 default: false
 
 env:
-    BASE_PATH: '${{ vars.BASE_PATH }}'
+    BASE_PATH: ${{ vars.BASE_PATH }}
     ENVIRONMENT: 'remote'
-    RECAPTCHA_SECRET: '${{ secrets.RECAPTCHA_SECRET }}'
-    JWT_SECRET: '${{ secrets.JWT_SECRET }}'
-    DROPLET_IP: '${{ vars.DROPLET_IP }}'
-    POSTGRES_PASSWORD: '${{ secrets.POSTGRES_PASSWORD }}'
+    RECAPTCHA_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
+    JWT_SECRET: ${{ secrets.JWT_SECRET }}
+    DROPLET_IP: ${{ vars.DROPLET_IP }}
+    POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
     SQLX_OFFLINE: true
-    DATABASE_URL: 'DATABASE_URL=postgres://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432'
 
 jobs:
     deploy:
