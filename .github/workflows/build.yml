@@ -35,20 +35,20 @@ jobs:
     build:
         runs-on: ubuntu-latest
 
-        services:
-            postgres:
-                image: postgres:15.2-alpine
-                env:
-                    POSTGRES_USER: postgres
-                    POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-                    POSTGRES_DB: postgres
-                ports:
-                    - 5432:5432
+        # services:
+        #     postgres:
+        #         image: postgres:15.2-alpine
+        #         env:
+        #             POSTGRES_USER: postgres
+        #             POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        #             POSTGRES_DB: postgres
+        #         ports:
+        #             - 5432:5432
 
-            redis:
-                image: redis:7.0-alpine
-                ports:
-                    - 6379:6379
+        #     redis:
+        #         image: redis:7.0-alpine
+        #         ports:
+        #             - 6379:6379
 
         steps:
             # Checkout code from the repository
@@ -83,6 +83,7 @@ jobs:
               working-directory: ./auth-service
               run: |
                   export JWT_SECRET=secret
+                  export SQLX_OFFLINE=${{ secrets.SQLX_OFFLINE }}
                   export DATABASE_URL=postgres://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432
                   cargo build --verbose
               #   cargo test --verbose
@@ -101,6 +102,6 @@ jobs:
               uses: docker/bake-action@v4
               with:
                   push: true
-                  set: |
-                      *.cache-from=type=gha
-                      *.cache-to=type=gha,mode=max
+                  #   set: |
+                  #       *.cache-from=type=gha
+                  #       *.cache-to=type=gha,mode=max
