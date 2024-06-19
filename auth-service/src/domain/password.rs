@@ -1,5 +1,5 @@
+use color_eyre::eyre::{eyre, Result};
 use regex_automata::{meta::Regex, Input};
-use validator::ValidationError;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub struct Password(String);
@@ -20,13 +20,13 @@ pub struct Password(String);
  */
 
 impl Password {
-    pub fn parse(password: String) -> Result<Password, ValidationError> {
+    pub fn parse(password: String) -> Result<Password> {
         let is_valid_password = validate_password(&password);
 
         if is_valid_password {
             Ok(Self(password))
         } else {
-            Err(ValidationError::new("Invalid password"))
+            Err(eyre!("Invalid password"))
         }
     }
 }

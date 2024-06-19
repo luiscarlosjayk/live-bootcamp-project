@@ -6,6 +6,7 @@ use crate::{
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use axum_extra::extract::CookieJar;
 
+#[tracing::instrument(name = "Logout Route Handler", skip_all)]
 pub async fn logout(
     jar: CookieJar,
     State(state): State<AppState>,
@@ -31,10 +32,8 @@ pub async fn logout(
 
     // Add token to banned token store
     let mut banned_token_store = state.banned_token_store.write().await;
-    let response = banned_token_store.add_token(token).await;
-
-    if response.is_err() {
-        return (jar, Err(AuthAPIError::UnexpectedError));
+    if let Err(e) = banned_token_store.add_token(token).await {
+        return (jar, Err(AuthAPIError::UnexpectedError(e.into())));
     }
 
     (jar, Ok(StatusCode::OK))

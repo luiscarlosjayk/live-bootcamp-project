@@ -2,6 +2,7 @@ use crate::{
     domain::data_stores::{BannedTokenStore, BannedTokenStoreError},
     utils::auth::TOKEN_TTL_SECONDS,
 };
+use color_eyre::eyre::{Context, Result};
 use redis::{Commands, Connection};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -18,28 +19,41 @@ impl RedisBannedTokenStore {
 
 #[async_trait::async_trait]
 impl BannedTokenStore for RedisBannedTokenStore {
+    #[tracing::instrument(name = "RedisBannedTokenStore:: Add Token", skip_all)]
     async fn add_token(&mut self, token: String) -> Result<(), BannedTokenStoreError> {
         let key = get_key(&token);
+
         let token_ttl_seconds: u64 = TOKEN_TTL_SECONDS
             .try_into()
-            .map_err(|_| BannedTokenStoreError::UnexpectedError)?;
+            .wrap_err("Failed to cast TOKEN_TTL_SECONDS to u64")
+            .map_err(BannedTokenStoreError::UnexpectedError)?;
 
-        self.conn
+        let _: () = self
+            .conn
             .write()
             .await
             .set_ex(key, true, token_ttl_seconds)
-            .map_err(|_| BannedTokenStoreError::UnexpectedError)
+            .wrap_err("Failed to set banned token in Redis")
+            .map_err(BannedTokenStoreError::UnexpectedError)?;
+
+        Ok(())
     }
 
+    #[tracing::instrument(name = "RedisBannedTokenStore:: Contains Token", skip_all)]
     async fn contains_token(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
         let key = get_key(token);
-        self.conn
+        let is_banned: bool = self
+            .conn
             .write()
             .await
             .exists::<String, bool>(key)
-            .map_err(|_| BannedTokenStoreError::UnexpectedError)
+            .wrap_err("Failed to check if token exists in Redis")
+            .map_err(BannedTokenStoreError::UnexpectedError)?;
+
+        Ok(is_banned)
     }
 
+    #[tracing::instrument(name = "RedisBannedTokenStore:: Empty Store", skip_all)]
     async fn empty_store(&mut self) -> Result<(), BannedTokenStoreError> {
         let mut redis_connection = self.conn.write().await;
 
@@ -47,7 +61,8 @@ impl BannedTokenStore for RedisBannedTokenStore {
         redis::cmd("FLUSHDB")
             .arg("ASYNC")
             .query::<()>(&mut redis_connection)
-            .map_err(|_| BannedTokenStoreError::UnexpectedError)
+            .wrap_err("Failed to flush Redis database")
+            .map_err(BannedTokenStoreError::UnexpectedError)
     }
 }
 

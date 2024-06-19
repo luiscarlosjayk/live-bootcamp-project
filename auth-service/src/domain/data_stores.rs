@@ -1,14 +1,32 @@
 use crate::domain::{Email, Password, User};
 use async_trait::async_trait;
+use color_eyre::eyre::{eyre, Context, Report, Result};
 use rand::Rng;
 use regex_automata::meta::Regex;
+use thiserror::Error;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Error)]
 pub enum UserStoreError {
+    #[error("User already exists")]
     UserAlreadyExists,
+    #[error("User not found")]
     UserNotFound,
+    #[error("Invalid credentials")]
     InvalidCredentials,
-    UnexpectedError,
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
+}
+
+impl PartialEq for UserStoreError {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::UserAlreadyExists, Self::UserAlreadyExists)
+                | (Self::UserNotFound, Self::UserNotFound)
+                | (Self::InvalidCredentials, Self::InvalidCredentials)
+                | (Self::UnexpectedError(_), Self::UnexpectedError(_))
+        )
+    }
 }
 
 #[async_trait]
@@ -20,10 +38,12 @@ pub trait UserStore {
         -> Result<(), UserStoreError>;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Error)]
 pub enum BannedTokenStoreError {
+    #[error("Invalid token")]
     InvalidToken,
-    UnexpectedError,
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
 }
 
 #[async_trait]
@@ -50,27 +70,32 @@ pub trait TwoFACodeStore {
     ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError>;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Error)]
 pub enum TwoFACodeStoreError {
+    #[error("Login Attempt ID not found")]
     LoginAttemptIdNotFound,
-    UnexpectedError,
+    #[error("Unexpected error")]
+    UnexpectedError(#[source] Report),
+}
+
+impl PartialEq for TwoFACodeStoreError {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::LoginAttemptIdNotFound, Self::LoginAttemptIdNotFound)
+                | (Self::UnexpectedError(_), Self::UnexpectedError(_))
+        )
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LoginAttemptId(String);
 
 impl LoginAttemptId {
-    pub fn parse(id: String) -> Result<Self, String> {
-        let _ = match uuid::Uuid::parse_str(&id) {
-            Ok(uuid) => uuid,
-            Err(_) => return Err("Error".to_string()),
-        };
+    pub fn parse(id: String) -> Result<Self> {
+        let parsed_id = uuid::Uuid::parse_str(&id).wrap_err("Invalid login attempt id")?;
 
-        if uuid::Uuid::parse_str(&id).is_err() {
-            return Err("Invalid loginAttemptId".to_string());
-        }
-
-        Ok(Self(id))
+        Ok(Self(parsed_id.to_string()))
     }
 }
 
@@ -91,13 +116,15 @@ impl AsRef<str> for LoginAttemptId {
 pub struct TwoFACode(String);
 
 impl TwoFACode {
-    pub fn parse(code: String) -> Result<Self, String> {
-        let regex = Regex::new(r#"(?m)^\d{6}$"#).expect("Could not build regex pattern");
+    pub fn parse(code: String) -> Result<Self> {
+        let regex = Regex::new(r#"(?m)^\d{6}$"#)
+            .wrap_err("Failed to generate regex pattern")
+            .expect("Could not build regex pattern");
         let is_valid = regex.is_match(&code);
 
         match is_valid {
             true => Ok(Self(code)),
-            false => Err("Invalid 2FA code".to_string()),
+            false => Err(eyre!("Invalid 2FA code")),
         }
     }
 }

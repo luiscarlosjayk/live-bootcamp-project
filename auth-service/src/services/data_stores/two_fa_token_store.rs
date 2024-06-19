@@ -1,3 +1,5 @@
+use color_eyre::eyre::{eyre, Result};
+
 use crate::domain::{
     data_stores::{LoginAttemptId, TwoFACode, TwoFACodeStore, TwoFACodeStoreError},
     Email,
@@ -26,7 +28,10 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
     async fn remove_code(&mut self, email: &Email) -> Result<(), TwoFACodeStoreError> {
         match self.codes.remove(email) {
             Some(_) => Ok(()),
-            None => Err(TwoFACodeStoreError::UnexpectedError),
+            None => Err(TwoFACodeStoreError::UnexpectedError(eyre!(format!(
+                "Failed to remove email: {} from the 2FA Code Store",
+                &email.as_ref()
+            )))),
         }
     }
 
@@ -80,7 +85,13 @@ mod tests {
         assert!(result.is_ok());
 
         let result = two_fa_code_store.remove_code(&email).await;
-        assert_eq!(result, Err(TwoFACodeStoreError::UnexpectedError));
+        assert_eq!(
+            result,
+            Err(TwoFACodeStoreError::UnexpectedError(eyre!(format!(
+                "Failed to remove email: {} from the 2FA Code Store",
+                &email.as_ref()
+            ))))
+        );
     }
 
     #[tokio::test]

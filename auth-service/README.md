@@ -8,4 +8,6 @@ docker run --name ps-db -e POSTGRES_PASSWORD=[YOUR_POSTGRES_PASSWORD] -p 5432:54
 
 ### Run a Redis instance for integration tests
 
+```bash
 docker run --name redis-db -p "6379:6379" -d redis:7.0-alpine
+```
