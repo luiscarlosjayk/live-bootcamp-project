@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use color_eyre::eyre::{eyre, Context, Report, Result};
 use rand::Rng;
 use regex_automata::meta::Regex;
+use secrecy::{ExposeSecret, Secret};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -48,8 +49,8 @@ pub enum BannedTokenStoreError {
 
 #[async_trait]
 pub trait BannedTokenStore {
-    async fn add_token(&mut self, token: String) -> Result<(), BannedTokenStoreError>;
-    async fn contains_token(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
+    async fn add_token(&mut self, token: Secret<String>) -> Result<(), BannedTokenStoreError>;
+    async fn contains_token(&self, token: Secret<String>) -> Result<bool, BannedTokenStoreError>;
     async fn empty_store(&mut self) -> Result<(), BannedTokenStoreError>;
 }
 
@@ -88,32 +89,38 @@ impl PartialEq for TwoFACodeStoreError {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct LoginAttemptId(String);
+#[derive(Debug, Clone)]
+pub struct LoginAttemptId(Secret<String>);
 
 impl LoginAttemptId {
     pub fn parse(id: String) -> Result<Self> {
         let parsed_id = uuid::Uuid::parse_str(&id).wrap_err("Invalid login attempt id")?;
 
-        Ok(Self(parsed_id.to_string()))
+        Ok(Self(Secret::new(parsed_id.to_string())))
     }
 }
 
 impl Default for LoginAttemptId {
     fn default() -> Self {
         let random_id = uuid::Uuid::new_v4().to_string();
-        Self(random_id)
+        Self(Secret::new(random_id))
     }
 }
 
-impl AsRef<str> for LoginAttemptId {
-    fn as_ref(&self) -> &str {
-        self.0.as_str()
+impl AsRef<Secret<String>> for LoginAttemptId {
+    fn as_ref(&self) -> &Secret<String> {
+        &self.0
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct TwoFACode(String);
+impl PartialEq for LoginAttemptId {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct TwoFACode(Secret<String>);
 
 impl TwoFACode {
     pub fn parse(code: String) -> Result<Self> {
@@ -123,7 +130,7 @@ impl TwoFACode {
         let is_valid = regex.is_match(&code);
 
         match is_valid {
-            true => Ok(Self(code)),
+            true => Ok(Self(Secret::new(code))),
             false => Err(eyre!("Invalid 2FA code")),
         }
     }
@@ -131,7 +138,7 @@ impl TwoFACode {
 
 impl std::fmt::Display for TwoFACode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", self.as_ref().expose_secret())
     }
 }
 
@@ -140,12 +147,18 @@ impl Default for TwoFACode {
         let mut rng = rand::thread_rng();
         let random_number = rng.gen_range(100000..=999999);
 
-        Self(random_number.to_string())
+        Self(Secret::new(random_number.to_string()))
     }
 }
 
-impl AsRef<str> for TwoFACode {
-    fn as_ref(&self) -> &str {
-        self.0.as_str()
+impl PartialEq for TwoFACode {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
+    }
+}
+
+impl AsRef<Secret<String>> for TwoFACode {
+    fn as_ref(&self) -> &Secret<String> {
+        &self.0
     }
 }

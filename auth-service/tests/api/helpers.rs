@@ -12,6 +12,7 @@ use auth_service::{
 };
 use redis::{Client as RedisClient, RedisResult};
 use reqwest::cookie::Jar;
+use secrecy::{ExposeSecret, Secret};
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions},
     Connection, Executor, PgConnection, PgPool,
@@ -199,7 +200,7 @@ fn get_redis_client(redis_hostname: String) -> RedisResult<RedisClient> {
 }
 
 async fn configure_postgresql(db_name: &str) -> PgPool {
-    let postgresql_conn_url = constants::DATABASE_URL.to_owned();
+    let postgresql_conn_url = constants::DATABASE_URL.expose_secret();
 
     // // We are creating a new database for each test case, and we need to ensure each database has a unique name!
     // let db_name = Uuid::new_v4().to_string();
@@ -209,7 +210,7 @@ async fn configure_postgresql(db_name: &str) -> PgPool {
     let postgresql_conn_url_with_db = format!("{}/{}", postgresql_conn_url, db_name);
 
     // Create a new connection pool and return it
-    get_postgres_pool(&postgresql_conn_url_with_db)
+    get_postgres_pool(&Secret::new(postgresql_conn_url_with_db))
         .await
         .expect("Failed to create Postgres connection pool!")
 }
@@ -247,7 +248,7 @@ pub fn get_random_email() -> String {
 }
 
 async fn delete_database(db_name: &str) {
-    let postgresql_conn_url = constants::DATABASE_URL.to_owned();
+    let postgresql_conn_url = constants::DATABASE_URL.expose_secret().to_owned();
     let connection_options = PgConnectOptions::from_str(&postgresql_conn_url)
         .expect("Failed to parse PostgreSQL connection string.");
     let mut connection = PgConnection::connect_with(&connection_options)

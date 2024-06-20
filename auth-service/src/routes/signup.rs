@@ -4,6 +4,7 @@ use crate::{
     utils::constants::env::RECAPTCHA_SECRET_ENV_VAR,
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use secrecy::Secret;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -23,10 +24,10 @@ pub struct SignupResponse {
     pub message: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 pub struct SignupRequest {
-    pub email: String,
-    pub password: String,
+    pub email: Secret<String>,
+    pub password: Secret<String>,
     #[serde(rename = "requires2FA")]
     pub requires_2fa: bool,
     pub recaptcha: String,

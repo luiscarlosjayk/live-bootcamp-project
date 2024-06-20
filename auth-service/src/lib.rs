@@ -8,6 +8,7 @@ use axum::{
 };
 use domain::{environment::get_env, AuthAPIError};
 use redis::{Client as RedisClient, RedisResult};
+use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::error::Error;
@@ -128,9 +129,12 @@ fn log_error_chain(e: &(dyn Error + 'static)) {
     tracing::error!("{}", report);
 }
 
-pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
+pub async fn get_postgres_pool(url: &Secret<String>) -> Result<PgPool, sqlx::Error> {
     // Creates a new PostgreSQL connection pool.
-    PgPoolOptions::new().max_connections(5).connect(url).await
+    PgPoolOptions::new()
+        .max_connections(5)
+        .connect(url.expose_secret())
+        .await
 }
 
 pub fn get_redis_client(redis_hostname: String) -> RedisResult<RedisClient> {

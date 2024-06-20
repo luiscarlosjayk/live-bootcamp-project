@@ -1,12 +1,10 @@
-use super::constants::{env::JWT_SECRET_ENV_VAR, JWT_COOKIE_NAME};
-use crate::{
-    app_state::BannedTokenStoreType,
-    domain::{email::Email, environment::get_env},
-};
+use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
+use crate::{app_state::BannedTokenStoreType, domain::email::Email};
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::{Duration, Utc};
 use color_eyre::eyre::{eyre, Context, ContextCompat, Result};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Validation};
+use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 
 // This value determines how long the JWT auth token is valid for
@@ -57,7 +55,7 @@ pub fn generate_auth_token(email: &Email) -> Result<String> {
         .try_into()
         .wrap_err(format!("Failed to cast exp to usize. exp time: {}", exp))?;
 
-    let sub = email.as_ref().to_owned();
+    let sub = email.as_ref().expose_secret().to_owned();
     let claims = Claims { sub, exp };
 
     create_token(&claims)
@@ -68,7 +66,12 @@ pub async fn validate_token(
     token: &str,
     banned_token_store: BannedTokenStoreType,
 ) -> Result<Claims> {
-    match banned_token_store.read().await.contains_token(token).await {
+    match banned_token_store
+        .read()
+        .await
+        .contains_token(Secret::new(token.to_string()))
+        .await
+    {
         Ok(value) => {
             if value {
                 return Err(eyre!("Token is banned"));
@@ -79,10 +82,9 @@ pub async fn validate_token(
         }
     }
 
-    let jwt_secret = get_env(JWT_SECRET_ENV_VAR);
     decode::<Claims>(
         token,
-        &DecodingKey::from_secret(jwt_secret.as_bytes()),
+        &DecodingKey::from_secret(JWT_SECRET.expose_secret().as_bytes()),
         &Validation::default(),
     )
     .map(|data| data.claims)
@@ -91,11 +93,10 @@ pub async fn validate_token(
 
 #[tracing::instrument(name = "Create Token", skip_all)]
 pub fn create_token(claims: &Claims) -> Result<String> {
-    let jwt_secret = get_env(JWT_SECRET_ENV_VAR);
     encode(
         &jsonwebtoken::Header::default(),
         &claims,
-        &EncodingKey::from_secret(jwt_secret.as_bytes()),
+        &EncodingKey::from_secret(JWT_SECRET.expose_secret().as_bytes()),
     )
     .wrap_err("Failed to create token")
 }
@@ -105,6 +106,7 @@ mod tests {
     use crate::{
         services::data_stores::HashsetBannedTokenStore, utils::constants::env::JWT_SECRET_ENV_VAR,
     };
+    use secrecy::Secret;
     use std::{env, sync::Arc};
     use tokio::sync::RwLock;
 
@@ -113,7 +115,7 @@ mod tests {
     #[tokio::test]
     async fn test_generate_auth_cookie() {
         env::set_var(JWT_SECRET_ENV_VAR, "test");
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email = Email::parse(Secret::new("test@example.com".to_owned())).unwrap();
         let cookie = generate_auth_cookie(&email).unwrap();
         assert_eq!(cookie.name(), JWT_COOKIE_NAME);
         assert_eq!(cookie.value().split('.').count(), 3);
@@ -136,7 +138,7 @@ mod tests {
     #[tokio::test]
     async fn test_generate_auth_token() {
         env::set_var(JWT_SECRET_ENV_VAR, "test");
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email = Email::parse(Secret::new("test@example.com".to_owned())).unwrap();
         let result = generate_auth_token(&email).unwrap();
         assert_eq!(result.split('.').count(), 3);
     }
@@ -144,7 +146,7 @@ mod tests {
     #[tokio::test]
     async fn test_validate_token_with_valid_token() {
         env::set_var(JWT_SECRET_ENV_VAR, "test");
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email = Email::parse(Secret::new("test@example.com".to_owned())).unwrap();
         let token = generate_auth_token(&email).unwrap();
         let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let result = validate_token(&token, banned_token_store).await.unwrap();

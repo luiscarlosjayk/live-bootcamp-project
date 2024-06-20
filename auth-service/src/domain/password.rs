@@ -1,8 +1,9 @@
 use color_eyre::eyre::{eyre, Result};
 use regex_automata::{meta::Regex, Input};
+use secrecy::{ExposeSecret, Secret};
 
-#[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub struct Password(String);
+#[derive(Debug, Clone)]
+pub struct Password(Secret<String>);
 
 /**
  * Password regex pattern: (NOT WORKING)
@@ -20,22 +21,26 @@ pub struct Password(String);
  */
 
 impl Password {
-    pub fn parse(password: String) -> Result<Password> {
-        let is_valid_password = validate_password(&password);
-
-        if is_valid_password {
+    pub fn parse(password: Secret<String>) -> Result<Password> {
+        if validate_password(&password) {
             Ok(Self(password))
         } else {
-            Err(eyre!("Invalid password"))
+            Err(eyre!("Failed to parse string to a Password type"))
         }
     }
 }
 
-fn validate_password(password: &str) -> bool {
-    password_has_lowercase(password)
-        && password_has_uppercase(password)
-        && password_has_required_length(password)
-        && password_has_numbers(password)
+impl PartialEq for Password {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
+    }
+}
+
+fn validate_password(password: &Secret<String>) -> bool {
+    password_has_lowercase(password.expose_secret())
+        && password_has_uppercase(password.expose_secret())
+        && password_has_required_length(password.expose_secret())
+        && password_has_numbers(password.expose_secret())
 }
 
 fn password_has_uppercase(password: &str) -> bool {
@@ -57,41 +62,42 @@ fn password_has_required_length(password: &str) -> bool {
     password.len() > 8
 }
 
-impl AsRef<str> for Password {
-    fn as_ref(&self) -> &str {
-        self.0.as_str()
+impl AsRef<Secret<String>> for Password {
+    fn as_ref(&self) -> &Secret<String> {
+        &self.0
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use secrecy::Secret;
 
     #[test]
     fn valid_password_should_return_result() {
-        let valid_password = "abcDEF123";
+        let valid_password = Secret::new("abcDEF123".to_string());
 
-        assert!(Password::parse(valid_password.to_string()).is_ok());
+        assert!(Password::parse(valid_password).is_ok());
     }
 
     #[test]
     fn invalid_password_should_return_error() {
-        let invalid_password: String = "ABCDEF123".to_string(); // Misses lowercases
+        let invalid_password = Secret::new("ABCDEF123".to_string()); // Misses lowercases
         assert!(Password::parse(invalid_password).is_err());
 
-        let invalid_password: String = "abcdef123".to_string(); // Misses uppercases
+        let invalid_password = Secret::new("abcdef123".to_string()); // Misses uppercases
         assert!(Password::parse(invalid_password).is_err());
 
-        let invalid_password: String = "abcdEFGH".to_string(); // Misses numbers
+        let invalid_password = Secret::new("abcdEFGH".to_string()); // Misses numbers
         assert!(Password::parse(invalid_password).is_err());
     }
 
     #[test]
     fn should_be_able_to_convert_a_borrowed_password_to_str() {
-        let valid_password = "abcDEF123".to_string();
+        let valid_password = Secret::new("abcDEF123".to_string());
         let password = Password::parse(valid_password.clone()).expect("Couldn't parse password");
         let password_str = password.as_ref();
 
-        assert_eq!(valid_password, password_str.to_string());
+        assert_eq!(valid_password.expose_secret(), password_str.expose_secret());
     }
 }

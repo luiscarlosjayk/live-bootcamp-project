@@ -8,10 +8,11 @@ use axum::{
     response::IntoResponse,
     Json,
 };
+use secrecy::Secret;
 use serde::{Deserialize, Serialize};
 
 pub async fn delete(
-    Path(request_email): Path<String>,
+    Path(request_email): Path<Secret<String>>,
     State(state): State<AppState>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
     let email = Email::parse(request_email).map_err(|_| AuthAPIError::InvalidCredentials)?;

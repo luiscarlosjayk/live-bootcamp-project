@@ -1,22 +1,38 @@
 use color_eyre::eyre::{eyre, Result};
+use secrecy::{ExposeSecret, Secret};
+use std::hash::Hash;
 use validator::ValidateEmail;
 
-#[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub struct Email(String);
+#[derive(Debug, Clone)]
+pub struct Email(Secret<String>);
 
 impl Email {
-    pub fn parse(email: String) -> Result<Email> {
-        if email.validate_email() {
+    pub fn parse(email: Secret<String>) -> Result<Email> {
+        if email.expose_secret().validate_email() {
             Ok(Self(email))
         } else {
-            Err(eyre!("Invalid email: {}", email))
+            Err(eyre!("Invalid email: {}", email.expose_secret()))
         }
     }
 }
 
-impl AsRef<str> for Email {
-    fn as_ref(&self) -> &str {
-        self.0.as_str()
+impl PartialEq for Email {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
+    }
+}
+
+impl Hash for Email {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.expose_secret().hash(state);
+    }
+}
+
+impl Eq for Email {}
+
+impl AsRef<Secret<String>> for Email {
+    fn as_ref(&self) -> &Secret<String> {
+        &self.0
     }
 }
 
@@ -27,27 +43,27 @@ mod tests {
 
     #[test]
     fn empty_string_is_rejected() {
-        let email = "".to_string();
+        let email = Secret::new("".to_string());
         assert!(Email::parse(email).is_err());
     }
     #[test]
     fn email_missing_at_symbol_is_rejected() {
-        let email = "ursuladomain.com".to_string();
+        let email = Secret::new("ursuladomain.com".to_string());
         assert!(Email::parse(email).is_err());
     }
     #[test]
     fn email_missing_subject_is_rejected() {
-        let email = "@domain.com".to_string();
+        let email = Secret::new("@domain.com".to_string());
         assert!(Email::parse(email).is_err());
     }
 
     #[test]
     fn should_be_able_to_convert_a_borrowed_email_to_str() {
         let valid_email: String = FreeEmail(EN).fake();
-        let email = Email::parse(valid_email.clone()).unwrap();
+        let email = Email::parse(Secret::new(valid_email.clone())).unwrap();
         let email_str = email.as_ref();
 
-        assert_eq!(valid_email, email_str.to_string());
+        assert_eq!(&valid_email, email_str.expose_secret());
     }
 
     #[derive(Debug, Clone)]
@@ -62,6 +78,6 @@ mod tests {
 
     #[quickcheck_macros::quickcheck]
     fn valid_emails_are_parsed_successfully(valid_email: ValidEmailFixture) -> bool {
-        Email::parse(valid_email.0).is_ok()
+        Email::parse(Secret::new(valid_email.0)).is_ok()
     }
 }

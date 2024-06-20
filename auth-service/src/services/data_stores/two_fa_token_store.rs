@@ -1,4 +1,5 @@
 use color_eyre::eyre::{eyre, Result};
+use secrecy::ExposeSecret;
 
 use crate::domain::{
     data_stores::{LoginAttemptId, TwoFACode, TwoFACodeStore, TwoFACodeStoreError},
@@ -30,7 +31,7 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
             Some(_) => Ok(()),
             None => Err(TwoFACodeStoreError::UnexpectedError(eyre!(format!(
                 "Failed to remove email: {} from the 2FA Code Store",
-                &email.as_ref()
+                &email.as_ref().expose_secret()
             )))),
         }
     }
@@ -53,13 +54,14 @@ mod tests {
         data_stores::{LoginAttemptId, TwoFACode, TwoFACodeStoreError},
         Email,
     };
+    use secrecy::Secret;
 
     const DEFAULT_EMAIL: &str = "testing@email.com";
 
     #[tokio::test]
     async fn test_add_2fa_code() {
         let mut two_fa_code_store = HashmapTwoFACodeStore::default();
-        let email = Email::parse(DEFAULT_EMAIL.to_string()).unwrap();
+        let email = Email::parse(Secret::new(DEFAULT_EMAIL.to_string())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let two_fa_code = TwoFACode::default();
 
@@ -72,7 +74,7 @@ mod tests {
     #[tokio::test]
     async fn test_remove_2fa_code() {
         let mut two_fa_code_store = HashmapTwoFACodeStore::default();
-        let email = Email::parse(DEFAULT_EMAIL.to_string()).unwrap();
+        let email = Email::parse(Secret::new(DEFAULT_EMAIL.to_string())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
 
@@ -89,7 +91,7 @@ mod tests {
             result,
             Err(TwoFACodeStoreError::UnexpectedError(eyre!(format!(
                 "Failed to remove email: {} from the 2FA Code Store",
-                &email.as_ref()
+                &email.as_ref().expose_secret()
             ))))
         );
     }
@@ -97,7 +99,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_2fa_code() {
         let mut two_fa_code_store = HashmapTwoFACodeStore::default();
-        let email = Email::parse(DEFAULT_EMAIL.to_string()).unwrap();
+        let email = Email::parse(Secret::new(DEFAULT_EMAIL.to_string())).unwrap();
         let login_attempt_id = LoginAttemptId::default();
         let code = TwoFACode::default();
 

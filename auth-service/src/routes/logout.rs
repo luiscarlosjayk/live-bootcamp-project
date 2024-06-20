@@ -5,6 +5,7 @@ use crate::{
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use axum_extra::extract::CookieJar;
+use secrecy::Secret;
 
 #[tracing::instrument(name = "Logout Route Handler", skip_all)]
 pub async fn logout(
@@ -32,7 +33,7 @@ pub async fn logout(
 
     // Add token to banned token store
     let mut banned_token_store = state.banned_token_store.write().await;
-    if let Err(e) = banned_token_store.add_token(token).await {
+    if let Err(e) = banned_token_store.add_token(Secret::new(token)).await {
         return (jar, Err(AuthAPIError::UnexpectedError(e.into())));
     }
 
