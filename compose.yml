@@ -33,6 +33,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       DROPLET_IP: ${DROPLET_IP}
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+      EMAIL_SENDER: ${EMAIL_SENDER}
     depends_on:
       db:
         condition: service_healthy

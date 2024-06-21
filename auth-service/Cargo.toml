@@ -42,6 +42,8 @@ thiserror = "1.0.61"
 color-eyre = "0.6.3"
 tracing-error = "0.2.0"
 secrecy = { version = "0.8.0", features = ["serde"] }
+aws-config = "1.5.3"
+aws-sdk-sesv2 = "1.36.0"
 
 [dev-dependencies]
 fake = "=2.3.0"

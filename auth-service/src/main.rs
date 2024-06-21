@@ -1,13 +1,16 @@
 use auth_service::app_state::AppState;
-use auth_service::services::mock_email_client::MockEmailClient;
+use auth_service::domain::Email;
 use auth_service::services::postgres_user_store::PostgresUserStore;
 use auth_service::services::{
-    data_stores::RedisBannedTokenStore, data_stores::RedisTwoFACodeStore,
+    aws_ses_email_client::SESEmailClient, data_stores::RedisBannedTokenStore,
+    data_stores::RedisTwoFACodeStore,
 };
 use auth_service::utils::constants::{prod, DATABASE_URL, REDIS_HOST_NAME};
 use auth_service::utils::tracing::init_tracing;
 use auth_service::{get_postgres_pool, get_redis_client, Application};
+use aws_config::{meta::region::RegionProviderChain, BehaviorVersion};
 use dotenvy::dotenv;
+use secrecy::Secret;
 use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -26,7 +29,7 @@ async fn main() {
         redis_connection.clone(),
     )));
     let two_fa_code_store = Arc::new(RwLock::new(RedisTwoFACodeStore::new(redis_connection)));
-    let email_client = Arc::new(MockEmailClient);
+    let email_client = Arc::new(configure_ses_email_client().await);
 
     let app_state = AppState::new(
         user_store,
@@ -61,4 +64,23 @@ fn configure_redis() -> redis::Connection {
         .expect("Failed to get Redis client")
         .get_connection()
         .expect("Failed to get Redis connection")
+}
+
+async fn configure_aws_config() -> aws_config::SdkConfig {
+    let region_provider = RegionProviderChain::default_provider().or_else("us-east-1");
+
+    aws_config::defaults(BehaviorVersion::latest())
+        .region(region_provider)
+        .load()
+        .await
+}
+
+async fn configure_ses_email_client() -> SESEmailClient {
+    let sdk_config = configure_aws_config().await;
+    let sender = Email::parse(Secret::new(
+        auth_service::utils::constants::EMAIL_SENDER.to_owned(),
+    ))
+    .expect("Failed to create Email from EMAIL_SENDER env");
+
+    SESEmailClient::new(sender, &sdk_config)
 }
